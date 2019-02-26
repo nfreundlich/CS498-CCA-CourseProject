@@ -1,4 +1,4 @@
-service: serverless # NOTE: update this with your service name
+service: serverless
 
 provider:
   name: aws
