@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:lb="http://publications.europa.eu/resource/authority/legal-basis" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://publications.europa.eu/resource/authority/legal-basis" elementFormDefault="qualified" attributeFormDefault="unqualified" version="20181030-0">
+	<xs:simpleType name="t_legal-basis_tedschema">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="02007R0718-20130526">
+				<xs:annotation>
+					<xs:documentation>Regulation (EC) No 718/2007  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="22014A0529_01">
+				<xs:annotation>
+					<xs:documentation>Association Agreement between the European Union and its Member States, of the one part, and Ukraine, of the other part  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="31958D1006_01">
+				<xs:annotation>
+					<xs:documentation>Decision creating the 'Official Journal of the European Communities'  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="31958R0001">
+				<xs:annotation>
+					<xs:documentation>EEC Council: Regulation No 1 determining the languages to be used by the European Economic Community  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="31985R2137">
+				<xs:annotation>
+					<xs:documentation>Regulation (EEC) No 2137/85}  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="31992L0013">
+				<xs:annotation>
+					<xs:documentation>Directive 92/13/EEC  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="31994D0001">
+				<xs:annotation>
+					<xs:documentation>94/1/EC, ECSC: Decision  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="31994D0800">
+				<xs:annotation>
+					<xs:documentation>94/800/EC: Decision  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32001R2157">
+				<xs:annotation>
+					<xs:documentation>Regulation (EC) No 2157/2001}  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32002D0309">
+				<xs:annotation>
+					<xs:documentation>2002/309/EC,Euratom: Decision  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32002R2195">
+				<xs:annotation>
+					<xs:documentation>Regulation (EC) No 2195/2002  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32003R1435">
+				<xs:annotation>
+					<xs:documentation>Regulation (EC) No 1435/2003}  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32004L0017">
+				<xs:annotation>
+					<xs:documentation>Directive 2004/17/EC  / adm.status[deprecated]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32004L0018">
+				<xs:annotation>
+					<xs:documentation>Directive 2004/18/EC  / adm.status[deprecated]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32005D0015">
+				<xs:annotation>
+					<xs:documentation>2005/15/EC: Decision  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32007D0005_01">
+				<xs:annotation>
+					<xs:documentation>2007/497/EC: Decision  / adm.status[deprecated]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32007L0066">
+				<xs:annotation>
+					<xs:documentation>Directive 2007/66/EC  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32007R1370">
+				<xs:annotation>
+					<xs:documentation>Regulation (EC) No 1370/2007  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32008R1008">
+				<xs:annotation>
+					<xs:documentation>Regulation (EC) No 1008/2008  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32009D0496">
+				<xs:annotation>
+					<xs:documentation>2009/496/EC,Euratom: Decision  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32009L0081">
+				<xs:annotation>
+					<xs:documentation>Directive 2009/81/EC  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32011R1251">
+				<xs:annotation>
+					<xs:documentation>Regulation (EU) No 1251/2011  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32012R0966">
+				<xs:annotation>
+					<xs:documentation>Regulation (EU, Euratom) No 966/2012  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32012R1268">
+				<xs:annotation>
+					<xs:documentation>Regulation (EU) No 1268/2012  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32013L0016">
+				<xs:annotation>
+					<xs:documentation>Directive 2013/16/EU  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32014D0115">
+				<xs:annotation>
+					<xs:documentation>2014/115/EU: Council Decision  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32014D0691">
+				<xs:annotation>
+					<xs:documentation>2014/691/EU: Decision  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32014L0023">
+				<xs:annotation>
+					<xs:documentation>Directive 2014/23/EU  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32014L0024">
+				<xs:annotation>
+					<xs:documentation>Directive 2014/24/EU  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32014L0025">
+				<xs:annotation>
+					<xs:documentation>Directive 2014/25/EU  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32015R0323">
+				<xs:annotation>
+					<xs:documentation>Regulation (EU) 2015/323}  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32015R1986">
+				<xs:annotation>
+					<xs:documentation>Regulation (EU) 2015/1986  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32016D0002">
+				<xs:annotation>
+					<xs:documentation>Decision (EU) 2016/245  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="32018R1046">
+				<xs:annotation>
+					<xs:documentation>Regulation (EU, Euratom) 2018/1046  / adm.status[current]</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+		<!--TED_SCHEMA use context-->
+	</xs:simpleType>
+	<xs:simpleType name="t_legal-basis_espd">
+		<xs:restriction base="xs:string"/>
+		<!--ESPD use context-->
+	</xs:simpleType>
+	<xs:simpleType name="t_legal-basis_einvoicing">
+		<xs:restriction base="xs:string"/>
+		<!--EINVOICING use context-->
+	</xs:simpleType>
+	<xs:simpleType name="t_legal-basis_etendering">
+		<xs:restriction base="xs:string"/>
+		<!--ETENDERING use context-->
+	</xs:simpleType>
+</xs:schema>
