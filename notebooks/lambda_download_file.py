@@ -1,6 +1,7 @@
 ## A Lambda function to get the files for the current month from the TED FTP, download the latest one (or more can be specified as
-## a parameter to the function), extract them and then upload the extracted files to an S3 bucket. I created a bucket for test
-## purposes in my account.
+## a parameter to the function). The function used to extract the tarballs and then upload the XML files individually, but this
+## takes quite a long time so it has been modified to instead just upload the .tar.gz file to S3. Then the parsing function
+## can handle the downloading and extraction.
 
 import json
 from ftplib import FTP
@@ -88,40 +89,42 @@ def download_files(data_path="/tmp", ftp_path="91.250.107.123", username="guest"
             downloaded_files.append(d_file)
         except Exception as e:
             print("Error downloading", file, e)
-    
-    extracted_files = []
-    # extract the tarballs
-    for file in downloaded_files:
-        print("\nExtracting:", file)
-        try:
-            if (file.endswith("tar.gz")):
-                tar = tarfile.open(file, "r:gz")
-                tar.extractall(data_path)
-                tar.close()
-            elif (file.endswith("tar")):
-                tar = tarfile.open(file, "r:")
-                tar.extractall()
-                tar.close()
             
-            extracted_files.append(file)
-            if delete_files:
-                # if everything was properly extracted we can delete the file
-                os.remove(file)
-        except:
-            print("Error extracting", file)
+    # Extracting the files and uploading them to S3 individually takes WAY too long,
+    # instead let's just upload the tarball and then we can download that and extract it
+    # when we process the data
+    
+    # extracted_files = []
+    # # extract the tarballs
+    # for file in downloaded_files:
+    #     print("\nExtracting:", file)
+    #     try:
+    #         if (file.endswith("tar.gz")):
+    #             tar = tarfile.open(file, "r:gz")
+    #             tar.extractall(data_path)
+    #             tar.close()
+    #         elif (file.endswith("tar")):
+    #             tar = tarfile.open(file, "r:")
+    #             tar.extractall()
+    #             tar.close()
+            
+    #         extracted_files.append(file)
+    #         if delete_files:
+    #             # if everything was properly extracted we can delete the file
+    #             os.remove(file)
+    #     except:
+    #         print("Error extracting", file)
 
-    return extracted_files
+    return downloaded_files
 
-def upload_to_s3(data_path="/tmp", version=1):
+def upload_to_s3(data_path="/tmp", key="raw_data"):
     bucket = s3.Bucket(AWS_BUCKET_NAME)
     
     # find the directories in the download dir
-    dirs = os.listdir(data_path)
-    for dir_ in dirs:
-        bucket_path = "v"+str(version)+"/"+dir_
+    files = os.listdir(data_path)
+    for file in files:
         try:
-            for file in os.listdir(os.path.join(data_path, dir_)):
-                s3.meta.client.upload_file(Filename = os.path.join(data_path, dir_, file), Bucket = AWS_BUCKET_NAME, Key = bucket_path + "/" + file)
+            s3.meta.client.upload_file(Filename = os.path.join(data_path, file), Bucket = AWS_BUCKET_NAME, Key = key + "/" + file)
         except Exception as e:
             print(e)
     
@@ -135,3 +138,5 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': json.dumps(new_files)
     }
+
+
