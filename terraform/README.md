@@ -1,5 +1,7 @@
+These steps assume you've got [AWS credentials set up locally](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html).
+
 1. Install Terraform
-2. Create an S3 bucket to store the Terraform state in
+2. Create an S3 bucket to store the Terraform state in. When you run `terraform init`, you'll be asked for its name.
 3. `cd` into this directory
-3. Run `terraform init`
-4. Run `terraform apply`
+4. Run `terraform init`
+5. Run `terraform apply`
