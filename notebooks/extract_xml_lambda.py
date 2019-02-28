@@ -15,6 +15,8 @@ import xmltodict
 
 
 s3 = boto3.resource('s3')
+
+AWS_BUCKET_NAME = 'cca498'
 USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'AC_AWARD_CRIT__CODE', 'CATEGORY', 'DATE', 'DS_DATE_DISPATCH',
        'FILE', 'HEADING', 'ISO_COUNTRY__VALUE', 'LG', 'LG_ORIG',
@@ -376,11 +378,16 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
     return return_df
 
 def lambda_handler(event, context):
+
     downloaded_files = download_file(event)
     extracted_files = extract_files(downloaded_files)
     df = load_data("/tmp")
-    print(df.head())
-    # TODO implement
+    formatted_date = datetime.datetime.now.strftime('%Y-%m-%d')
+    file_name = formatted_date + ".pkl"
+    df.to_pickle("/tmp/" + file_name)
+    # upload the file to S3
+    s3.meta.client.upload_file(Filename = os.path.join("/tmp", file_name), Bucket = AWS_BUCKET_NAME, Key = file_name)
+    
     return {
         'statusCode': 200,
         'body': json.dumps(extracted_files)
