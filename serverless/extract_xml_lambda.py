@@ -1,7 +1,3 @@
-## I remove the use of Pandas from this because I had a difficult time getting it to run properly in Lambda. If you use Lambda
-## with the SciPy layer and include the xmltodict.py file in the function this will run properly. It is triggered by an S3 PUT
-## and it returns a list of dicts with ONLY the appropriate columns, saves it to an NPY file and uploads it back to S3.
-
 import json
 import numpy as np
 import collections
@@ -99,7 +95,46 @@ USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'FD_OTH_NOT__STI_DOC__P__ADDRESS_NOT_STRUCT__POSTAL_CODE',
        'FD_OTH_NOT__STI_DOC__P__ADDRESS_NOT_STRUCT__TOWN',
        'FD_OTH_NOT__TI_DOC', 'VERSION']
-
+['ORIGINAL_CPV',
+ 'ORIGINAL_CPV_CODE',
+ 'ORIGINAL_CPV_TEXT',
+ 'ORIGINAL_CPV__CODE',
+ 'OBJECT_CONTRACT__SHORT_DESCR',
+ 'PROCEDURE__LANGUAGES__LANGUAGE__VALUE',
+ 'OBJECT_CONTRACT__OBJECT_DESCR__CPV_ADDITIONAL__CPV_CODE__CODE',
+ 'OBJECT_CONTRACT__OBJECT_DESCR__ITEM',
+ 'OBJECT_CONTRACT__OBJECT_DESCR__SHORT_DESCR',
+ 'OBJECT_CONTRACT__OBJECT_DESCR__n2016:NUTS__CODE',
+ 'OBJECT_CONTRACT__OBJECT_DESCR__DURATION',
+ 'OBJECT_CONTRACT__OBJECT_DESCR__DURATION__TYPE',
+ 'COMPLEMENTARY_INFO__INFO_ADD',
+ 'LEFTI__SUITABILITY',
+ 'AWARD_CONTRACT__ITEM',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT',
+ 'AWARD_CONTRACT__TITLE',
+ 'n2016:TENDERER_NUTS',
+ 'n2016:TENDERER_NUTS__CODE',
+ 'AWARD_CONTRACT__CONTRACT_NO',
+ 'n2016:PERFORMANCE_NUTS',
+ 'n2016:PERFORMANCE_NUTS__CODE',
+ 'n2016:CA_CE_NUTS',
+ 'n2016:CA_CE_NUTS__CODE',
+ 'AWARD_CONTRACT__LOT_NO',
+ 'LG_ORIG',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__OFFICIALNAME',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__POSTAL_CODE',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__TOWN',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__n2016:NUTS__CODE',
+ 'FD_OTH_NOT__STI_DOC__P__ADDRESS_NOT_STRUCT__BLK_BTX',
+ 'FD_OTH_NOT__OBJ_NOT__BLK_BTX',
+ 'MA_MAIN_ACTIVITIES',
+ 'MA_MAIN_ACTIVITIES__CODE',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__TENDERS__NB_TENDERS_RECEIVED',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL',
+ 'AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL__CURRENCY',
+ 'FD_OTH_NOT__TI_DOC']
+ 
 def download_file(event):
     objects = event['Records']
     
@@ -379,9 +414,17 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         row_dict = {}
         for col in USE_COLS:
             if col in row:
-                row_dict[col] = row[col]
+                if col not in LIST_COLS:
+                    row_dict[col] = row[col]
+                elif not isinstance(row[col], list):
+                    row_dict[col] = [row[col]]
+                else:
+                    row_dict[col] = row[col]
             else:
-                row_dict[col] = ""
+                if col not in LIST_COLS:    
+                    row_dict[col] = ""
+                else:
+                    row_dict[col] = []
                 
         final_result.append(row_dict)
     return final_result
@@ -399,7 +442,7 @@ def lambda_handler(event, context):
     np.save("/tmp/" + file_name, df)
     # df.to_pickle("/tmp/" + file_name)
     # upload the file to S3
-    s3.meta.client.upload_file(Filename = os.path.join("/tmp", file_name), Bucket = AWS_BUCKET_NAME, Key = file_name)
+    s3.meta.client.upload_file(Filename = os.path.join("/tmp", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
     
     return {
         'statusCode': 200,
