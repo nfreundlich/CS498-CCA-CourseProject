@@ -95,7 +95,8 @@ USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'FD_OTH_NOT__STI_DOC__P__ADDRESS_NOT_STRUCT__POSTAL_CODE',
        'FD_OTH_NOT__STI_DOC__P__ADDRESS_NOT_STRUCT__TOWN',
        'FD_OTH_NOT__TI_DOC', 'VERSION']
-['ORIGINAL_CPV',
+
+LIST_COLS = ['ORIGINAL_CPV',
  'ORIGINAL_CPV_CODE',
  'ORIGINAL_CPV_TEXT',
  'ORIGINAL_CPV__CODE',
@@ -414,10 +415,18 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         row_dict = {}
         for col in USE_COLS:
             if col in row:
+                # if the column should NOT contain lists
                 if col not in LIST_COLS:
-                    row_dict[col] = row[col]
+                    # if it is not a list we are good
+                    if not isinstance(row[col], list):
+                        row_dict[col] = row[col]
+                    # if it is a list we should join it to a string
+                    else:
+                        row_dict[col] = ";".join(row[col])
+                # else if the column should contain lists and the data is NOT a list we make it into a list
                 elif not isinstance(row[col], list):
                     row_dict[col] = [row[col]]
+                # else the column should contain lists and the data already is a list
                 else:
                     row_dict[col] = row[col]
             else:
