@@ -1,5 +1,6 @@
 .DS_Store
 notebooks/data/
+notebooks/logs/*
 notebooks/.ipynb_checkpoints/
 *.tar.gz
 .terraform
