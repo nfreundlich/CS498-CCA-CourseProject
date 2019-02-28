@@ -1,0 +1,13 @@
+service: lambda-layers
+
+provider:
+  name: aws
+  region: eu-west-3
+  runtime: python3.7
+
+layers:
+  numpy-pandas-pyarrow-pytz:
+    path: numpy-pandas-pyarrow-pytz-layer
+    name: numpy-pandas-pyarrow-pytz
+    compatibleRuntimes:
+      - python3.7
