@@ -1,18 +1,17 @@
-## Lambda doesn't have pandas or numpy by default, we need to figure out how to add them to the environment.
-## This may help: https://hackersandslackers.com/using-pandas-with-aws-lambda/
+## I remove the use of Pandas from this because I had a difficult time getting it to run properly in Lambda. If you use Lambda
+## with the SciPy layer and include the xmltodict.py file in the function this will run properly. It is triggered by an S3 PUT
+## and it returns a list of dicts with ONLY the appropriate columns, saves it to an NPY file and uploads it back to S3.
 
 import json
+import numpy as np
+import collections
 import datetime
 import os
 import tarfile
 import urllib.request
 import boto3
 import io
-import pandas as pd
-import collections
-import numpy as np
 import xmltodict
-
 
 s3 = boto3.resource('s3')
 
@@ -102,7 +101,7 @@ USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'FD_OTH_NOT__TI_DOC', 'VERSION']
 
 def download_file(event):
-    objects = event['key1']['Records']
+    objects = event['Records']
     
     downloaded_files = []
     
@@ -362,29 +361,43 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         
         parsed_data.append(flattened)
 
-    df = pd.DataFrame(parsed_data)
+    # df = pd.DataFrame(parsed_data)
         
     # try convert Currencies to Euros, some doc types don't have this so it's not a big deal if there's an error
-    try:
-        df['VALUE_EUR'] = convert_currencies(df['VALUES_VALUE'].values, df['VALUES_VALUE_CURRENCY'].values)
-    except:
-        pass
+    # try:
+    #     df['VALUE_EUR'] = convert_currencies(df['VALUES_VALUE'].values, df['VALUES_VALUE_CURRENCY'].values)
+    # except:
+    #     pass
     
-    return_df = pd.DataFrame(columns=USE_COLS)
-    for col in df.columns:
-        if col in USE_COLS:
-            return_df[col] = df[col]
-
-    return return_df
+    # return_df = pd.DataFrame(columns=USE_COLS)
+    # for col in df.columns:
+    #     if col in USE_COLS:
+    #         return_df[col] = df[col]
+    
+    final_result = []
+    for row in parsed_data:
+        row_dict = {}
+        for col in USE_COLS:
+            if col in row:
+                row_dict[col] = row[col]
+            else:
+                row_dict[col] = ""
+                
+        final_result.append(row_dict)
+    return final_result
 
 def lambda_handler(event, context):
-
+    print("Downloading file...")
     downloaded_files = download_file(event)
+    print("Extracting files...")
     extracted_files = extract_files(downloaded_files)
+    print("Parsing data...")
     df = load_data("/tmp")
-    formatted_date = datetime.datetime.now.strftime('%Y-%m-%d')
-    file_name = formatted_date + ".pkl"
-    df.to_pickle("/tmp/" + file_name)
+    formatted_date = datetime.datetime.now().strftime('%Y-%m-%d')
+    file_name = formatted_date + ".npy"
+    print(file_name)
+    np.save("/tmp/" + file_name, df)
+    # df.to_pickle("/tmp/" + file_name)
     # upload the file to S3
     s3.meta.client.upload_file(Filename = os.path.join("/tmp", file_name), Bucket = AWS_BUCKET_NAME, Key = file_name)
     
