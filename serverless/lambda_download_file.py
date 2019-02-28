@@ -1,19 +1,14 @@
-## A Lambda function to get the files for the current month from the TED FTP, download the latest one (or more can be specified as
-## a parameter to the function). The function used to extract the tarballs and then upload the XML files individually, but this
-## takes quite a long time so it has been modified to instead just upload the .tar.gz file to S3. Then the parsing function
-## can handle the downloading and extraction.
-
 import json
 from ftplib import FTP
 import datetime
 import os
-import tarfile
+# import tarfile
 import urllib.request
 import json
 import boto3
 
 s3 = boto3.resource('s3')
-AWS_BUCKET_NAME = 'cca498'
+AWS_BUCKET_NAME = '1-cca-ted-raw-dev'
 
 # Function download_files:
 # FTPs to ftp_path, gets list of files in the directory for the current year and month (note that this may cause
@@ -138,5 +133,3 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': json.dumps(new_files)
     }
-
-
