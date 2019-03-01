@@ -432,9 +432,8 @@ def lambda_handler(event, context):
     extracted_files = extract_files(downloaded_files)
     print("Parsing data...")
     df = load_data("/tmp")
-    formatted_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    file_name = formatted_date + ".parquet"
-    print(file_name)
+    # create the filename based on the name of the tarball so we don't overwrite files
+    file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
     df.to_parquet("/tmp/" + file_name)
     # upload the file to S3
     s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
