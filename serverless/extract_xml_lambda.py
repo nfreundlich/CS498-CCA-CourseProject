@@ -322,7 +322,11 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         
     # loop through the files
     for dir_ in os.listdir(data_dir):
-        files = os.listdir(os.path.join(data_path, dir_))
+        # different instances of same lambda function may share the same environment, this should catch such errors
+        try:
+            files = os.listdir(os.path.join(data_path, dir_))
+        except:
+            continue
         date = dir_.split("_")[0]
         for file in files:
             # read the contents of the file
@@ -432,8 +436,9 @@ def lambda_handler(event, context):
     extracted_files = extract_files(downloaded_files)
     print("Parsing data...")
     df = load_data("/tmp")
-    # create the filename based on the name of the tarball so we don't overwrite files
+    print("Done parsing...")
     file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
+    print(file_name)
     df.to_parquet("/tmp/" + file_name)
     # upload the file to S3
     s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
