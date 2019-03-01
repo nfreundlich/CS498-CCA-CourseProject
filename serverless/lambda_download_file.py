@@ -55,10 +55,18 @@ def download_files(data_path="/tmp", ftp_path="91.250.107.123", username="guest"
         # we may want to do this for yesterday 
         now = datetime.datetime.now()
         if year is None:
-            year = str(now.year)
+            year = now.year
         if month is None:
-            month = datetime.datetime.now().strftime('%m')
-
+            month = now.month
+            if now.day == 1:
+                month -= 1
+                if month == 0:
+                    month = 12
+                    year -= 1
+        
+        month = str(month).zfill(2)
+        year = str(year)
+         
         # go to that directory and get the files in it
         ftp.cwd('daily-packages/' + year + "/" + month) 
         dir_list = ftp.nlst() 
