@@ -9,6 +9,7 @@ import boto3
 import io
 import xmltodict
 import pandas as pd
+import shutil
 
 s3 = boto3.resource('s3')
 
@@ -322,7 +323,6 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         
     # loop through the files
     for dir_ in os.listdir(data_dir):
-        # different instances of same lambda function may share the same environment, this should catch such errors
         try:
             files = os.listdir(os.path.join(data_path, dir_))
         except:
@@ -385,7 +385,11 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
                                 language_tenders.append((header_info, form_contents))
                     except Exception as e:
                         print("File 1", file, e)
-
+        
+        # delete the directory we just read from to avoid conflicts and duplicates
+        # this may not be necessary and we may want to revisit it
+        shutil.rmtree(os.path.join(data_dir, dir_))
+        
     if language == None:
         language_tenders = all_tenders
     
