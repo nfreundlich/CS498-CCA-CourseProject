@@ -21,7 +21,7 @@ AWS_BUCKET_NAME = '1-cca-ted-raw-dev'
 # - ftp_path -> URI for FTP
 # - username, password -> username and password for FTP login
 # - year, month -> year and month to download data for, if None will use current month and year
-# - max_files -> max number of files to download, useful for debuggin
+# - max_files -> max number of files to download, useful for debugging
 # - delete_files -> whether to delete the files that have been successfully extracted
 #
 # Returns:
@@ -58,11 +58,6 @@ def download_files(data_path="/tmp", ftp_path="91.250.107.123", username="guest"
             year = now.year
         if month is None:
             month = now.month
-            if now.day == 1:
-                month -= 1
-                if month == 0:
-                    month = 12
-                    year -= 1
         
         month = str(month).zfill(2)
         year = str(year)
@@ -93,31 +88,6 @@ def download_files(data_path="/tmp", ftp_path="91.250.107.123", username="guest"
         except Exception as e:
             print("Error downloading", file, e)
             
-    # Extracting the files and uploading them to S3 individually takes WAY too long,
-    # instead let's just upload the tarball and then we can download that and extract it
-    # when we process the data
-    
-    # extracted_files = []
-    # # extract the tarballs
-    # for file in downloaded_files:
-    #     print("\nExtracting:", file)
-    #     try:
-    #         if (file.endswith("tar.gz")):
-    #             tar = tarfile.open(file, "r:gz")
-    #             tar.extractall(data_path)
-    #             tar.close()
-    #         elif (file.endswith("tar")):
-    #             tar = tarfile.open(file, "r:")
-    #             tar.extractall()
-    #             tar.close()
-            
-    #         extracted_files.append(file)
-    #         if delete_files:
-    #             # if everything was properly extracted we can delete the file
-    #             os.remove(file)
-    #     except:
-    #         print("Error extracting", file)
-
     return downloaded_files
 
 def upload_to_s3(data_path="/tmp", key="raw_data"):
