@@ -407,28 +407,22 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         pass
     
     return_df = pd.DataFrame(columns=USE_COLS)
-    for col in df.columns:
-        if col in USE_COLS:
-            return_df[col] = df[col]
-    
-    # final_result = []
-    # for row in parsed_data:
-    #     row_dict = {}
-    #     for col in USE_COLS:
-    #         if col in row:
-    #             if col not in LIST_COLS:
-    #                 row_dict[col] = row[col]
-    #             elif not isinstance(row[col], list):
-    #                 row_dict[col] = [row[col]]
-    #             else:
-    #                 row_dict[col] = row[col]
-    #         else:
-    #             if col not in LIST_COLS:    
-    #                 row_dict[col] = ""
-    #             else:
-    #                 row_dict[col] = []
+    for col in USE_COLS:
+        column_data = df[col].values
+        
+        is_list_col = (col in LIST_COLS)
+        for i, item in enumerate(column_data):
+            if is_list_col and not isinstance(item, list):
+                column_data[i] = [item]
+            elif is_list_col:
+                column_data[i] = item
+            elif not is_list_col and isinstance(item, list):
+                column_data[i] = ";".join(item)
+            else:
+                column_data[i] = item
                 
-    #     final_result.append(row_dict)
+        return_df[col] = column_data   
+
     return return_df
 
 def lambda_handler(event, context):
@@ -439,10 +433,9 @@ def lambda_handler(event, context):
     print("Parsing data...")
     df = load_data("/tmp")
     formatted_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    file_name = formatted_date + ".pkl"
+    file_name = formatted_date + ".parquet"
     print(file_name)
-    df.to_pickle("/tmp/" + file_name)
-    # df.to_pickle("/tmp/" + file_name)
+    df.to_parquet("/tmp/" + file_name)
     # upload the file to S3
     s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
     
