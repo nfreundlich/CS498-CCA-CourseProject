@@ -315,8 +315,6 @@ data_path = "/tmp"
 ## Returns - 
 ## - dataframe of parsed documents
 def load_data(data_dir, language="EN", doc_type_filter=None):
-    parsed_xmls = []
-    
     language_tenders = []
     all_tenders = []
     
@@ -336,8 +334,6 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
                 
                 if doc_type_filter is not None and parsed_xml['TED_EXPORT']['CODED_DATA_SECTION']['CODIF_DATA']['TD_DOCUMENT_TYPE']['#text'] != doc_type_filter:
                     continue
-                    
-                parsed_xmls.append(parsed_xml)
                 
                 # get some header info
                 forms_section = parsed_xml['TED_EXPORT']['FORM_SECTION']
@@ -395,6 +391,9 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
     
     parsed_data = []
     
+    # we don't need all tenders anymore, let's delete it
+    del(all_tenders)
+    
     for (header, tender) in language_tenders:
         flattened = {}
         
@@ -405,9 +404,15 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         flattened = extract_xml(tender, "", flattened)
         
         parsed_data.append(flattened)
-
+    
+    # clean up unneeded data
+    del(language_tenders)
+    
     df = pd.DataFrame(parsed_data)
-        
+    
+    # garbage collecting       
+    del(parsed_data)
+    
     # try convert Currencies to Euros, some doc types don't have this so it's not a big deal if there's an error
     try:
         df['VALUE_EUR'] = convert_currencies(df['VALUES_VALUE'].values, df['VALUES_VALUE_CURRENCY'].values)
