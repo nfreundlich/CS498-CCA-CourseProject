@@ -5,12 +5,17 @@ provider:
     INITIALS: ${opt:initials}
     STAGE: ${opt:stage}
   iamRoleStatements:
-    -  Effect: Allow
-       Action:
-         - 's3:GetBucketNotification'
-         - 's3:PutBucketNotification'
-       Resource:
-         - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}'
+    - Effect: Allow
+      Action:
+        - 's3:GetBucketNotification'
+        - 's3:PutBucketNotification'
+      Resource:
+        - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}'
+    - Effect: Allow
+      Action:
+        - 's3:*Object'
+      Resource:
+        - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}/*'
   name: aws
   region: eu-west-3
   runtime: python3.7
@@ -24,7 +29,7 @@ functions:
             - s3:ObjectCreated:*
     handler: extract_xml_lambda.lambda_handler
     layers:
-      - arn:aws:lambda:eu-west-3:725598214641:layer:numpy-pandas-pyarrow-pytz:1
+      - arn:aws:lambda:eu-west-3:725598214641:layer:numpy-pandas-pyarrow-pytz:2
   hello:
     handler: handler.hello
 
