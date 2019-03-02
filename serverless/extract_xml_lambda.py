@@ -369,16 +369,17 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
                 for form in forms:
                     try:
                         form_contents = forms_section[form]
-                            
+                        # if there is a list of forms there are multiple languages and we should pick the one we want   
                         if isinstance(form_contents, list):
                             for i, form_content in enumerate(form_contents):
                                 all_tenders.append((header_info, form_content))
                                 if language is not None and form_content['@LG'] == language:
                                     language_tenders.append((header_info, form_content))
+                                    
+                        # if the form is a dictionary there is only one and we should use it regardless of language
                         elif isinstance(form_contents, collections.OrderedDict):
                             all_tenders.append((header_info, form_contents))
-                            if language is not None and form_contents['@LG'] == language:
-                                language_tenders.append((header_info, form_contents))
+                            language_tenders.append((header_info, form_contents))
                     except Exception as e:
                         print("File 1", file, e)
         
