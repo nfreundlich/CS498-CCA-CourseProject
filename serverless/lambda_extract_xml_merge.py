@@ -1,3 +1,15 @@
+# Does same thing as the other extract_data Lambda function except this version doesn't create a separate Parquet
+# file for every day, but appends the new data to one Parquet file per month. This may be better for performance
+# than having lots of little data files.
+# Note that if the function is being tested it will apppend the test data to the same Parquet file repeatedly. To avoid
+# this I added a check to see if key "test" is in the first object in "Records" in the notification from S3. If it is 
+# the function creates a new file for the day instead of appending to the monthly file.
+#     "Records": [
+#         {
+#           "test": 1,
+#           "eventVersion": "2.0",
+#           "eventSource": "aws:s3",
+
 import json
 import numpy as np
 import collections
@@ -439,6 +451,25 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
 
     return return_df
 
+def download_and_merge_files(file_name, df, data_path="/tmp"):
+    # try to download current month's parquet file
+    month_file = file_name[:6] + "00_ALL.parquet"
+    data_file_path = os.path.join(data_path, month_file)
+    try:
+        bucket.download_file(month_file,data_file_path)
+        
+        # append current data to it
+        month_df = pd.read_parquet(data_file_path)
+        month_df = pd.concat([month_df, df], axis=0)
+        
+        # write it back to Parquet
+        month_df.to_parquet(data_file_path)
+    except:
+        # if it doesn't exist we will use the current file
+        df.to_parquet(data_file_path)
+    
+    return data_file_path, month_file
+    
 def lambda_handler(event, context):
     print("Downloading file...")
     downloaded_files = download_file(event)
@@ -448,11 +479,19 @@ def lambda_handler(event, context):
     df = load_data("/tmp")
     print("Done parsing...")
     file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
-    print(file_name)
-    df.to_parquet("/tmp/" + file_name)
-    # upload the file to S3
-    s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
     
+    if "test" not in event['Records'][0]:
+        # merge the current data with this month's data, if it exists
+        data_file_path, month_file = download_and_merge_files(file_name, df)
+        
+        # upload the new file to S3
+        s3.meta.client.upload_file(Filename = data_file_path, Bucket = "1-cca-ted-extracted-dev", Key = month_file)
+    else:    
+        print("Test mode:", file_name)
+        df.to_parquet("/tmp/" + file_name)
+        # upload the file to S3
+        s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
+        
     return {
         'statusCode': 200,
         'body': json.dumps(extracted_files)
