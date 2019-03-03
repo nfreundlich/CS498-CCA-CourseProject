@@ -475,34 +475,52 @@ def download_and_merge_files(file_name, df, data_path="/tmp"):
         print("Combined DF:", len(month_df))
         # write it back to Parquet
         month_df.to_parquet(data_file_path)
+        del(month_df)
     except Exception as e:
         print(e)
         # if it doesn't exist we will use the current file
         df.to_parquet(data_file_path)
+    del(df)
     
     return data_file_path, month_file
+
+# delete files in /tmp so we can free up some memory
+def cleanup_files():
+    files = os.listdir("/tmp")
+    logger.info('Deleting files...')
+    for file in files:
+        try:
+            os.remove(os.path.join("/tmp", file))
+        except:
+            logger.info('Error deleting file %s', file)
     
 def lambda_handler(event, context):
     downloaded_files = download_file(event)
-    print("Extracting files...")
+    logger.info('Extracting files...')
     extracted_files = extract_files(downloaded_files)
-    print("Parsing data...")
     df = load_data("/tmp")
-    print("Done parsing...")
+    logger.info('Done parsing...')
     file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
     
     if "test" not in event['Records'][0]:
         # merge the current data with this month's data, if it exists
         data_file_path, month_file = download_and_merge_files(file_name, df)
+        del(df)
         
         # upload the new file to S3
+        logger.info('Uploading to S3.')
         s3.meta.client.upload_file(Filename = data_file_path, Bucket = "1-cca-ted-extracted-dev", Key = month_file)
     else:    
         print("Test mode:", file_name)
         df.to_parquet("/tmp/" + file_name)
-        # upload the file to S3
-        s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
+        del(df)
         
+        # upload the file to S3
+        logger.info('Uploading to S3.')
+        s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
+    
+    cleanup_files()
+     
     return {
         'statusCode': 200,
         'body': json.dumps(extracted_files)
