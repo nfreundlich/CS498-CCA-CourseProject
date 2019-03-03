@@ -100,23 +100,14 @@ def upload_to_s3(data_path="/tmp", key="raw_data"):
     # find the directories in the download dir
     files = os.listdir(data_path)
     
-    # get the prefix for the current files
-    prefix = key + "/" + files[0][:6]
-    # print(prefix)
-    existing_keys = [ obj.key.split("/")[1] for obj in bucket.objects.filter(Prefix=prefix)]
-    # print(existing_keys)
-    
     for file in files:
         # check if the file already exists so we don't create duplicates
-        if file in existing_keys:
-            pass
-        else:
-            logger.info('Uploading %s to S3 bucket %s key %s', file, AWS_BUCKET_NAME, key)
-            try:
-                s3.meta.client.upload_file(Filename = os.path.join(data_path, file), Bucket = AWS_BUCKET_NAME, Key = key + "/" + file)
-            except Exception as e:
-                logger.info('Error uploading %s to S3 bucket %s key %', file, AWS_BUCKET_NAME, key)
-    
+        logger.info('Uploading %s to S3 bucket %s key %s', file, AWS_BUCKET_NAME, key)
+        try:
+            s3.meta.client.upload_file(Filename = os.path.join(data_path, file), Bucket = AWS_BUCKET_NAME, Key = key + "/" + file)
+        except Exception as e:
+            logger.info('Error uploading %s to S3 bucket %s key %', file, AWS_BUCKET_NAME, key)
+
 def lambda_handler(event, context):
     new_files = download_files(max_files=1, delete_files=True)
     
