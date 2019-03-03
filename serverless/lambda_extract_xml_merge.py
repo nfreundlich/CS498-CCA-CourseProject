@@ -347,7 +347,7 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         xml_files = [file for file in files if file.endswith('.xml')]
         for file in xml_files:
             # read the contents of the file
-            logger.info('Parsing data from %s', file)
+            # logger.info('Parsing data from %s', file)
             with io.open(os.path.join(data_path, dir_, file), 'r', encoding="utf-8") as f:
                 xml = f.read()
                 parsed_xml = xmltodict.parse(xml)
@@ -402,7 +402,7 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
                             language_tenders.append((header_info, form_contents))
                     except Exception as e:
                         print("File 1", file, e)
-            logger.info('Finished parsing data from %s', file)
+            # logger.info('Finished parsing data from %s', file)
         
         # delete the directory we just read from to avoid conflicts and duplicates
         # this may not be necessary and we may want to revisit it
@@ -465,15 +465,18 @@ def download_and_merge_files(file_name, df, data_path="/tmp"):
     month_file = file_name[:6] + "00_ALL.parquet"
     data_file_path = os.path.join(data_path, month_file)
     try:
+        bucket = s3.Bucket("1-cca-ted-extracted-dev")
         bucket.download_file(month_file,data_file_path)
-        
+        print("New DF:", len(df))
         # append current data to it
         month_df = pd.read_parquet(data_file_path)
+        print("Old DF:", len(month_df))
         month_df = pd.concat([month_df, df], axis=0)
-        
+        print("Combined DF:", len(month_df))
         # write it back to Parquet
         month_df.to_parquet(data_file_path)
-    except:
+    except Exception as e:
+        print(e)
         # if it doesn't exist we will use the current file
         df.to_parquet(data_file_path)
     
