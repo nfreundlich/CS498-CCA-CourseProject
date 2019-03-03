@@ -22,6 +22,10 @@ import io
 import xmltodict
 import pandas as pd
 import shutil
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 s3 = boto3.resource('s3')
 
@@ -158,12 +162,14 @@ def download_file(event):
     for object_ in objects:
         key = object_['s3']['object']['key']
         bucket = object_['s3']['bucket']['name']
+        logger.info('Downloading %s from %s', key, bucket)
     
         file_name = key.split("/")[-1]
     
         s3.Bucket(bucket).download_file(key, os.path.join("/tmp", file_name))
         
         downloaded_files.append(os.path.join("/tmp", file_name))
+        logger.info('Finished downloading %s from %s', key, bucket)
         
     return downloaded_files
 
@@ -338,8 +344,10 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         except:
             continue
         date = dir_.split("_")[0]
-        for file in files:
+        xml_files = [file for file in files if file.endswith('.xml')]
+        for file in xml_files:
             # read the contents of the file
+            logger.info('Parsing data from %s', file)
             with io.open(os.path.join(data_path, dir_, file), 'r', encoding="utf-8") as f:
                 xml = f.read()
                 parsed_xml = xmltodict.parse(xml)
@@ -394,6 +402,7 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
                             language_tenders.append((header_info, form_contents))
                     except Exception as e:
                         print("File 1", file, e)
+            logger.info('Finished parsing data from %s', file)
         
         # delete the directory we just read from to avoid conflicts and duplicates
         # this may not be necessary and we may want to revisit it
@@ -471,7 +480,6 @@ def download_and_merge_files(file_name, df, data_path="/tmp"):
     return data_file_path, month_file
     
 def lambda_handler(event, context):
-    print("Downloading file...")
     downloaded_files = download_file(event)
     print("Extracting files...")
     extracted_files = extract_files(downloaded_files)
