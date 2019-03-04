@@ -6,6 +6,10 @@ import os
 import urllib.request
 import json
 import boto3
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 s3 = boto3.resource('s3')
 AWS_BUCKET_NAME = '1-cca-ted-raw-dev'
@@ -81,12 +85,12 @@ def download_files(data_path="/tmp", ftp_path="91.250.107.123", username="guest"
     downloaded_files = []
     for file in files_to_download:
         try:
-            print("\nDownloading", file)
+            logger.info('Downloading file %s', file)
             file_name = file.split("/")[-1]
             d_file = urllib.request.urlretrieve(file, os.path.join(data_path, file_name))[0]
             downloaded_files.append(d_file)
         except Exception as e:
-            print("Error downloading", file, e)
+            logger.info('Error downloading file %s', file)
             
     return downloaded_files
 
@@ -95,12 +99,15 @@ def upload_to_s3(data_path="/tmp", key="raw_data"):
     
     # find the directories in the download dir
     files = os.listdir(data_path)
+    
     for file in files:
+        # check if the file already exists so we don't create duplicates
+        logger.info('Uploading %s to S3 bucket %s key %s', file, AWS_BUCKET_NAME, key)
         try:
             s3.meta.client.upload_file(Filename = os.path.join(data_path, file), Bucket = AWS_BUCKET_NAME, Key = key + "/" + file)
         except Exception as e:
-            print(e)
-    
+            logger.info('Error uploading %s to S3 bucket %s key %', file, AWS_BUCKET_NAME, key)
+
 def lambda_handler(event, context):
     new_files = download_files(max_files=1, delete_files=True)
     

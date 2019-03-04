@@ -1,23 +1,41 @@
-import json
-import numpy as np
-import collections
+## Script to download all data files for a specified month and day, extract them, parse them all into one Parquet file
+## and then upload the Parquet file to an S3 bucket.
+##
+## Arguments:
+##   -m --month (int, default=1) - month to download
+##   -y --year (int, default=2019) - year to download
+##   -b --bucket (str, default="1-cca-ted-extracted-dev") - S3 bucket to upload to
+
+from ftplib import FTP
 import datetime
 import os
+import urllib.request
+import json
+import boto3
 import tarfile
+import json
 import urllib.request
 import boto3
 import io
 import xmltodict
 import pandas as pd
 import shutil
+import collections
 import logging
+import argparse
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+parser = argparse.ArgumentParser(description='Process parameters')
+parser.add_argument("-m", "--month", help="Month to download", default=1, type=int)
+parser.add_argument("-y", "--year", help="Year to download", default=2019, type=int)
+parser.add_argument("-b", "--bucket", help="S3 bucket to upload to", default='1-cca-ted-extracted-dev', type=str)
+args = parser.parse_args()
+
+month = args.month
+year = args.year
+AWS_BUCKET_NAME = args.bucket
 
 s3 = boto3.resource('s3')
 
-AWS_BUCKET_NAME = 'cca498'
 USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'AC_AWARD_CRIT__CODE', 'CATEGORY', 'DATE', 'DS_DATE_DISPATCH',
        'FILE', 'HEADING', 'ISO_COUNTRY__VALUE', 'LG', 'LG_ORIG',
@@ -141,31 +159,92 @@ LIST_COLS = ['ORIGINAL_CPV',
  'AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL',
  'AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL__CURRENCY',
  'FD_OTH_NOT__TI_DOC']
- 
-def download_file(event):
-    objects = event['Records']
+
+# Function download_files:
+# FTPs to ftp_path, gets list of files in the directory for the current year and month (note that this may cause
+# problems on the first day of the month downloading the files from the last day of the previous month); makes a list 
+# of files to be download. Then downloads the files with wget (ftp was not downloading the entire file); unzips the 
+# tarballs and then deletes the tar.gz file.
+# 
+# Params:
+# - data_path -> path to download data to
+# - ftp_path -> URI for FTP
+# - username, password -> username and password for FTP login
+# - year, month -> year and month to download data for, if None will use current month and year
+# - max_files -> max number of files to download, useful for debugging
+# - delete_files -> whether to delete the files that have been successfully extracted
+#
+# Returns:
+# - list of files downloaded and successfully extracted
+#
+# Note that sometimes using the URL throws an error, in this case use the IP address: 91.250.107.123
+
+# Function download_files:
+# FTPs to ftp_path, gets list of files in the directory for the current year and month (note that this may cause
+# problems on the first day of the month downloading the files from the last day of the previous month); makes a list 
+# of files to be download. Then downloads the files with wget (ftp was not downloading the entire file); unzips the 
+# tarballs and then deletes the tar.gz file.
+# 
+# Params:
+# - data_path -> path to download data to
+# - ftp_path -> URI for FTP
+# - username, password -> username and password for FTP login
+# - year, month -> year and month to download data for, if None will use current month and year
+# - max_files -> max number of files to download, useful for debuggin
+# - delete_files -> whether to delete the files that have been successfully extracted
+#
+# Returns:
+# - list of files downloaded and successfully extracted
+#
+# Note that sometimes using the URL throws an error, in this case use the IP address: 91.250.107.123
+
+def download_files(data_path="/tmp", ftp_path="91.250.107.123", username="guest", password="guest", year=None, month=None, max_files=1, delete_files=True):
+    ## USE FTP TO GET THE LIST OF FILES TO DOWNLOAD
+    with FTP(ftp_path, user=username, passwd=password) as ftp:
+        # create the directory name for the current month and year
+        # we may want to do this for yesterday 
+        now = datetime.datetime.now()
+        if year is None:
+            year = now.year
+        if month is None:
+            month = now.month
+            
+        month = str(month).zfill(2)
+        year = str(year)
+         
+        # go to that directory and get the files in it
+        ftp.cwd('daily-packages/' + year + "/" + month) 
+        dir_list = ftp.nlst() 
+        files_to_download = []
+
+        # loop through the files
+        for file in dir_list:
+            # download the file with wget since ftplib seems to only download a small part of the file
+            file_path = "ftp://"+username+":"+password+"@" + ftp_path + "/daily-packages/" + year + "/" + month + "/" + file
+            files_to_download.append(file_path)
     
+    # the newest file will be the last one in the sorted list
+    if max_files is not None:
+        files_to_download = sorted(files_to_download)[-max_files:]
+    
+    # download the files with wget so we can download the entire file without errors            
     downloaded_files = []
-    
-    for object_ in objects:
-        key = object_['s3']['object']['key']
-        bucket = object_['s3']['bucket']['name']
-        logger.info('Downloading %s from %s', key, bucket)
-    
-        file_name = key.split("/")[-1]
-    
-        s3.Bucket(bucket).download_file(key, os.path.join("/tmp", file_name))
-        
-        downloaded_files.append(os.path.join("/tmp", file_name))
-        logger.info('Finished downloading %s from %s', key, bucket)
-        
+    for file in files_to_download:
+        try:
+            print("Downloading", file)
+            file_name = file.split("/")[-1]
+            d_file = urllib.request.urlretrieve(file, os.path.join(data_path, file_name))[0]
+            downloaded_files.append(d_file)
+        except Exception as e:
+            print("Error downloading", file, e)
+            
     return downloaded_files
 
 def extract_files(files, delete_files=True, data_path="/tmp"):
     extracted_files = []
     
-    for file in files:
-        print("\nExtracting:", file)
+    for i, file in enumerate(files):
+        print("Extracting " + str(i+1) + " of " + str(len(files)) + ":", file)
         try:
             if (file.endswith("tar.gz")):
                 tar = tarfile.open(file, "r:gz")
@@ -180,10 +259,11 @@ def extract_files(files, delete_files=True, data_path="/tmp"):
             if delete_files:
                 # if everything was properly extracted we can delete the file
                 os.remove(file)
-        except:
-            print("Error extracting", file)
+        except Exception as e:
+            print("Error extracting", file, e)
             
     return extracted_files
+
 
 # convert all currencies to EUR
 def convert_currencies(values, currencies):
@@ -310,8 +390,6 @@ def extract_xml(xml_dict, parent_key="", results_dict={}):
         pass
     
     return results_dict
-    
-data_path = "/tmp"
 
 ## Function load_data - 
 ## Params -
@@ -324,18 +402,20 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     language_tenders = []
     all_tenders = []
     
-        
+    dirs = os.listdir(data_dir)
     # loop through the files
-    for dir_ in os.listdir(data_dir):
+    for dir_ in dirs:
         try:
             files = os.listdir(os.path.join(data_dir, dir_))
-        except:
+        except Exception as e:
+            print(e)
             continue
+            
         date = dir_.split("_")[0]
         xml_files = [file for file in files if file.endswith('.xml')]
         for file in xml_files:
             # read the contents of the file
-            logger.info('Parsing data from %s', file)
+            # logger.info('Parsing data from %s', file)
             with io.open(os.path.join(data_dir, dir_, file), 'r', encoding="utf-8") as f:
                 xml = f.read()
                 parsed_xml = xmltodict.parse(xml)
@@ -390,11 +470,11 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                             language_tenders.append((header_info, form_contents))
                     except Exception as e:
                         print("File 1", file, e)
-            logger.info('Finished parsing data from %s', file)
+            # logger.info('Finished parsing data from %s', file)
         
         # delete the directory we just read from to avoid conflicts and duplicates
         # this may not be necessary and we may want to revisit it
-        shutil.rmtree(os.path.join(data_dir, dir_))
+#         shutil.rmtree(os.path.join(data_dir, dir_))
         
     if language == None:
         language_tenders = all_tenders
@@ -431,7 +511,6 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     
     return_df = pd.DataFrame(columns=USE_COLS)
     for col in USE_COLS:
-        # catch the possibility that the column doesn't exist in the dataframe
         try:
             column_data = df[col].values
 
@@ -449,23 +528,39 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
             return_df[col] = column_data   
         except:
             pass
-        
+      
     return return_df
 
-def lambda_handler(event, context):
-    downloaded_files = download_file(event)
-    print("Extracting files...")
-    extracted_files = extract_files(downloaded_files)
-    print("Parsing data...")
-    df = load_data("/tmp")
-    print("Done parsing...")
-    file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
-    print(file_name)
-    df.to_parquet("/tmp/" + file_name)
-    # upload the file to S3
-    s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
-    
-    return {
-        'statusCode': 200,
-        'body': json.dumps(file_name)
-    }
+prefix = str(year) + str(month).zfill(2)
+year = int(prefix[:4])
+month = int(prefix[4:])
+data_path = os.path.join("tmp", prefix)
+
+# create the proper directories
+try:
+    os.mkdir(data_path)
+except:
+    pass
+
+try:
+    os.mkdir(os.path.join(data_path, "extracted"))
+except:
+    pass
+
+print("Downloading for " + str(month) + "-" + str(year))
+new_files = download_files(data_path=data_path, max_files=30, month=month, year=year, delete_files=True)
+        
+extracted_files = extract_files(new_files, delete_files=False, data_path=os.path.join(data_path, "extracted"))
+
+print("Parsing XML files from", data_path)
+# load and parse the data
+df = load_data(os.path.join(data_path, "extracted"), language="FR")
+
+# write to Parquet
+month_file = prefix + "00_ALL.parquet"
+data_file_path = os.path.join(data_path, month_file)
+df.to_parquet(data_file_path)
+
+print("Uploading to S3", AWS_BUCKET_NAME)
+# upload to S3
+s3.meta.client.upload_file(Filename = data_file_path, Bucket = AWS_BUCKET_NAME, Key = month_file)
