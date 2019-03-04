@@ -340,7 +340,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                 xml = f.read()
                 parsed_xml = xmltodict.parse(xml)
                 
-                if doc_type_filter is not None and parsed_xml['TED_EXPORT']['CODED_DATA_SECTION']['CODIF_DATA']['TD_DOCUMENT_TYPE']['#text'] != doc_type_filter:
+                if doc_type_filter is not None and parsed_xml['TED_EXPORT']['CODED_DATA_SECTION']['CODIF_DATA']['TD_DOCUMENT_TYPE']['#text'] not in doc_type_filter:
                     continue
                 
                 # get some header info
