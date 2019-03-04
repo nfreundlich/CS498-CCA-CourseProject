@@ -2,20 +2,26 @@ service: cca-serverless
 
 provider:
   environment:
+    AWS_ACCOUNT_ID: ${opt:aws-account-id}
     INITIALS: ${opt:initials}
     STAGE: ${opt:stage}
   iamRoleStatements:
-    - Effect: Allow
-      Action:
+    - Action:
         - 's3:GetBucketNotification'
         - 's3:PutBucketNotification'
+      Effect: Allow
       Resource:
         - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}'
-    - Effect: Allow
-      Action:
+    - Action:
         - 's3:*Object'
+      Effect: Allow
       Resource:
         - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}/*'
+    - Action:
+        - 'sqs:*Message'
+      Effect: Allow
+      Resource:
+        - 'arn:aws:sqs:eu-west-3:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}'
   name: aws
   region: eu-west-3
   runtime: python3.7
@@ -29,9 +35,13 @@ functions:
             - s3:ObjectCreated:*
     handler: extract_xml_lambda.lambda_handler
     layers:
-      - arn:aws:lambda:eu-west-3:725598214641:layer:numpy-pandas-pyarrow-pytz:2
-  hello:
-    handler: handler.hello
+      - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
+  start_batch_job:
+    handler: batch_job.start
+  process_job_item:
+    handler: batch_job.process_item
+    events:
+      - sqs: arn:aws:sqs:eu-west-3:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}
 
 plugins:
   - serverless-plugin-existing-s3

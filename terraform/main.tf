@@ -21,3 +21,15 @@ module "s3_prod" {
     source = "./s3"
     stage = "prod"
 }
+
+module "sqs_dev" {
+    initials = "${var.initials}"
+    source = "./sqs"
+    stage = "dev"
+}
+
+module "sqs_prod" {
+    initials = "${var.initials}"
+    source = "./sqs"
+    stage = "prod"
+}
