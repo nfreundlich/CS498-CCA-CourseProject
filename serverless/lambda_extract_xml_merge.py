@@ -332,7 +332,7 @@ data_path = "/tmp"
 ## - doc_type_filter - if specified function will only return XML documents of the specified type
 ## Returns - 
 ## - dataframe of parsed documents
-def load_data(data_dir, language="EN", doc_type_filter=None):
+def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice', 'Contract notice', 'Additional information']):
     language_tenders = []
     all_tenders = []
     
@@ -340,7 +340,7 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
     # loop through the files
     for dir_ in os.listdir(data_dir):
         try:
-            files = os.listdir(os.path.join(data_path, dir_))
+            files = os.listdir(os.path.join(data_dir, dir_))
         except:
             continue
         date = dir_.split("_")[0]
@@ -348,7 +348,7 @@ def load_data(data_dir, language="EN", doc_type_filter=None):
         for file in xml_files:
             # read the contents of the file
             # logger.info('Parsing data from %s', file)
-            with io.open(os.path.join(data_path, dir_, file), 'r', encoding="utf-8") as f:
+            with io.open(os.path.join(data_dir, dir_, file), 'r', encoding="utf-8") as f:
                 xml = f.read()
                 parsed_xml = xmltodict.parse(xml)
                 
@@ -492,7 +492,10 @@ def cleanup_files():
         try:
             os.remove(os.path.join("/tmp", file))
         except:
-            logger.info('Error deleting file %s', file)
+            try:
+                shutil.rmtree(os.path.join("/tmp", file))
+            except:
+                logger.info('Error deleting file %s', file)
     
 def lambda_handler(event, context):
     downloaded_files = download_file(event)
@@ -518,7 +521,8 @@ def lambda_handler(event, context):
         # upload the file to S3
         logger.info('Uploading to S3.')
         s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
-    
+   
+    # delete files to free memory 
     cleanup_files()
      
     return {
