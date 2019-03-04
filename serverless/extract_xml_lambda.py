@@ -431,21 +431,25 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     
     return_df = pd.DataFrame(columns=USE_COLS)
     for col in USE_COLS:
-        column_data = df[col].values
-        
-        is_list_col = (col in LIST_COLS)
-        for i, item in enumerate(column_data):
-            if is_list_col and not isinstance(item, list):
-                column_data[i] = [item]
-            elif is_list_col:
-                column_data[i] = item
-            elif not is_list_col and isinstance(item, list):
-                column_data[i] = ";".join(item)
-            else:
-                column_data[i] = item
-                
-        return_df[col] = column_data   
+        # catch the possibility that the column doesn't exist in the dataframe
+        try:
+            column_data = df[col].values
 
+            is_list_col = (col in LIST_COLS)
+            for i, item in enumerate(column_data):
+                if is_list_col and not isinstance(item, list):
+                    column_data[i] = [item]
+                elif is_list_col:
+                    column_data[i] = item
+                elif not is_list_col and isinstance(item, list):
+                    column_data[i] = ";".join(item)
+                else:
+                    column_data[i] = item
+
+            return_df[col] = column_data   
+        except:
+            pass
+        
     return return_df
 
 def lambda_handler(event, context):
@@ -463,5 +467,5 @@ def lambda_handler(event, context):
     
     return {
         'statusCode': 200,
-        'body': json.dumps(extracted_files)
+        'body': json.dumps(file_name)
     }

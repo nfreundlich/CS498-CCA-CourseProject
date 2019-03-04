@@ -443,21 +443,25 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     
     return_df = pd.DataFrame(columns=USE_COLS)
     for col in USE_COLS:
-        column_data = df[col].values
-        
-        is_list_col = (col in LIST_COLS)
-        for i, item in enumerate(column_data):
-            if is_list_col and not isinstance(item, list):
-                column_data[i] = [item]
-            elif is_list_col:
-                column_data[i] = item
-            elif not is_list_col and isinstance(item, list):
-                column_data[i] = ";".join(item)
-            else:
-                column_data[i] = item
-                
-        return_df[col] = column_data   
+        # catch the possibility that the column doesn't exist in the dataframe
+        try:
+            column_data = df[col].values
 
+            is_list_col = (col in LIST_COLS)
+            for i, item in enumerate(column_data):
+                if is_list_col and not isinstance(item, list):
+                    column_data[i] = [item]
+                elif is_list_col:
+                    column_data[i] = item
+                elif not is_list_col and isinstance(item, list):
+                    column_data[i] = ";".join(item)
+                else:
+                    column_data[i] = item
+
+            return_df[col] = column_data   
+        except:
+            pass
+      
     return return_df
 
 def download_and_merge_files(file_name, df, data_path="/tmp"):
@@ -507,12 +511,12 @@ def lambda_handler(event, context):
     
     if "test" not in event['Records'][0]:
         # merge the current data with this month's data, if it exists
-        data_file_path, month_file = download_and_merge_files(file_name, df)
+        data_file_path, file_name = download_and_merge_files(file_name, df)
         del(df)
         
         # upload the new file to S3
         logger.info('Uploading to S3.')
-        s3.meta.client.upload_file(Filename = data_file_path, Bucket = "1-cca-ted-extracted-dev", Key = month_file)
+        s3.meta.client.upload_file(Filename = data_file_path, Bucket = "1-cca-ted-extracted-dev", Key = file_name)
     else:    
         print("Test mode:", file_name)
         df.to_parquet("/tmp/" + file_name)
@@ -527,5 +531,5 @@ def lambda_handler(event, context):
      
     return {
         'statusCode': 200,
-        'body': json.dumps(extracted_files)
+        'body': json.dumps(file_name)
     }
