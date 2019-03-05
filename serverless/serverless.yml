@@ -27,21 +27,26 @@ provider:
   runtime: python3.7
 
 functions:
-  extract_data:
-    events:
-      - existingS3: 
-          bucket: ${opt:initials}-cca-ted-raw-${opt:stage}
-          events:
-            - s3:ObjectCreated:*
-    handler: extract_xml_lambda.lambda_handler
-    layers:
-      - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
+  # extract_data:
+  #   events:
+  #     - existingS3: 
+  #         bucket: ${opt:initials}-cca-ted-raw-${opt:stage}
+  #         events:
+  #           - s3:ObjectCreated:*
+  #   handler: extract_xml_lambda.lambda_handler
+  #   layers:
+  #     - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
   start_batch_job:
     handler: batch_job.start
-  process_job_item:
-    handler: batch_job.process_item
+    layers:
+      - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
+  process_batch:
+    handler: batch_job.process_batch
     events:
       - sqs: arn:aws:sqs:eu-west-3:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}
+    layers:
+      - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
+    reservedConcurrency: 2
 
 plugins:
   - serverless-plugin-existing-s3
