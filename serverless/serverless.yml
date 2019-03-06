@@ -22,9 +22,9 @@ provider:
         - 'sqs:*Message'
       Effect: Allow
       Resource:
-        - 'arn:aws:sqs:eu-west-3:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}'
+        - 'arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}'
   name: aws
-  region: eu-west-3
+  region: eu-west-1
   runtime: python3.7
 
 functions:
@@ -40,13 +40,14 @@ functions:
   start_batch_job:
     handler: batch_job.start
     layers:
-      - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
   process_batch:
     events:
-      - sqs: arn:aws:sqs:eu-west-3:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}
+      - sqs: arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}
     handler: batch_job.process_batch
     layers:
-      - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
+      # TODO Don't hardcode the region
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
     reservedConcurrency: 2
     timeout: 900
 
