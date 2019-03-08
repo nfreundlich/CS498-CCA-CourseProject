@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 s3 = boto3.client('s3')
+sqs = boto3.client('sqs')
 
 s3_raw_bucket = f'{os.environ["INITIALS"]}-cca-ted-raw-{os.environ["STAGE"]}'
 s3_extracted_bucket = f'{os.environ["INITIALS"]}-cca-ted-extracted-{os.environ["STAGE"]}'
@@ -25,7 +26,6 @@ def start_transfer_job(event, context):
         dir_to_walk = f'{dir_to_walk}{event["year"]}/{event["month"]}/'
     logger.info('Walking %s', dir_to_walk)
     with open_fs(f'ftp://guest:guest@ted.europa.eu/{dir_to_walk}') as fs:
-        sqs = boto3.client('sqs')
         for path in fs.walk.files(filter=['*.tar.gz']):
             # TODO Batch and send
             sqs.send_message(
@@ -69,8 +69,25 @@ def _transfer_files_from_ftp_to_s3(paths):
             logger.info('Finished uploading %s to %s', tmp_path, full_s3_path)
             os.remove(tmp_path)
 
-def start_extraction_job(event, context):
-    pass
+def start_extract_job(event, context):
+    logger.info('Starting extract job')
+    s3_key_prefix = ''
+    if 'year' in event and 'month' in event:
+        s3_key_prefix = f'{event["year"]}/{event["month"]}'
+    s3_paginator = s3.get_paginator('list_objects_v2')
+    pages = s3_paginator.paginate(Bucket=s3_raw_bucket, Prefix=s3_key_prefix)
+    for page in pages:
+        for object_ in page['Contents']:
+            sqs.send_message(
+                QueueUrl=f'https://sqs.eu-west-3.amazonaws.com/{os.environ["AWS_ACCOUNT_ID"]}/{os.environ["INITIALS"]}_cca_ted_extractions_{os.environ["STAGE"]}',
+                MessageBody=json.dumps({
+                    'key': object_['Key']
+                })
+            )
+    logger.info('Finished starting extract job')
+    return {
+        'statusCode': 200
+    }
 
 def process_extractions(event, context):
     paths = [json.loads(record['body'])['path'] for record in event['Records']]

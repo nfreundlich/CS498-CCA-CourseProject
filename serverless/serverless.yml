@@ -47,6 +47,11 @@ functions:
       - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
     reservedConcurrency: 2
     timeout: 900
+  start_extract_job:
+    handler: batch_job.start_extract_job
+    layers:
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
+    timeout: 900
   start_transfer_job:
     handler: batch_job.start_transfer_job
     layers:
