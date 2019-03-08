@@ -19,13 +19,19 @@ job.init(args['JOB_NAME'], args)
 datasource0 = glueContext.create_dynamic_frame.from_catalog(database = "ted_2017", table_name = "20170700_all_parquet", transformation_ctx = "datasource0").toDF()
 datasource1 = glueContext.create_dynamic_frame.from_catalog(database = "ted_2017", table_name = "20170800_all_parquet", transformation_ctx = "datasource1").toDF()
 datasource2 = glueContext.create_dynamic_frame.from_catalog(database = "ted_2017", table_name = "20170900_all_parquet", transformation_ctx = "datasource2").toDF()
+datasource3 = glueContext.create_dynamic_frame.from_catalog(database = "ted_2017", table_name = "20171000_all_parquet", transformation_ctx = "datasource3").toDF()
+datasource4 = glueContext.create_dynamic_frame.from_catalog(database = "ted_2017", table_name = "20171100_all_parquet", transformation_ctx = "datasource4").toDF()
+datasource5 = glueContext.create_dynamic_frame.from_catalog(database = "ted_2017", table_name = "20171200_all_parquet", transformation_ctx = "datasource5").toDF()
 
 ## join the dataframes
 df0 = datasource0.union(datasource1)
 df1 = df0.union(datasource2)
+df2 = df1.union(datasource3)
+df3 = df2.union(datasource4)
+df4 = df3.union(datasource5)
 
 # repartition
-partitioned_dataframe = df1.repartition(1)
+partitioned_dataframe = df4.repartition(1)
 
 # put back to DDF
 partitioned_dynamicframe = DynamicFrame.fromDF(partitioned_dataframe, glueContext, "partitioned_df")

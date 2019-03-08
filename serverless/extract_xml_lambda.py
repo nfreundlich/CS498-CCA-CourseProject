@@ -349,6 +349,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                 
                 header_info = {}
                 header_info['DATE'] = date
+#                 header_info['YEAR'] = date[:4]
                 header_info['FILE'] = file
                 # extract the info from the codified data section
                 header_info = extract_xml(parsed_xml['TED_EXPORT']['CODED_DATA_SECTION']['CODIF_DATA'], "", header_info)
