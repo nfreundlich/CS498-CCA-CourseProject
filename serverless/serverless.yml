@@ -7,8 +7,7 @@ provider:
     STAGE: ${opt:stage}
   iamRoleStatements:
     - Action:
-        - 's3:GetBucketNotification'
-        - 's3:PutBucketNotification'
+        - 's3:ListBucket'
       Effect: Allow
       Resource:
         - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}'
@@ -29,42 +28,32 @@ provider:
   runtime: python3.7
 
 functions:
-  # TODO Add this back in and use it to extract based on S3 events
-  # extract_data:
-  #   events:
-  #     - existingS3: 
-  #         bucket: ${opt:initials}-cca-ted-raw-${opt:stage}
-  #         events:
-  #           - s3:ObjectCreated:*
-  #   handler: extract_xml_lambda.lambda_handler
-  #   layers:
-  #     - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
+  process_extractions:
+    events:
+      - sqs:
+          arn: arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_extractions_${opt:stage}
+          batchSize: 5
+    handler: batch_job.process_extractions
+    layers:
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:${opt:layers-version}
+    timeout: 900
   process_transfers:
     events:
       - sqs: arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_transfers_${opt:stage}
     handler: batch_job.process_transfers
     layers:
-      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:${opt:layers-version}
     reservedConcurrency: 2
     timeout: 900
   start_extract_job:
     handler: batch_job.start_extract_job
     layers:
-      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:${opt:layers-version}
     timeout: 900
   start_transfer_job:
     handler: batch_job.start_transfer_job
     layers:
-      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
-    timeout: 900
-  process_batch:
-    events:
-      - sqs: arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}
-    handler: batch_job.process_batch
-    layers:
-      # TODO Don't hardcode the region and version
-      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
-    reservedConcurrency: 2
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:${opt:layers-version}
     timeout: 900
 
 plugins:

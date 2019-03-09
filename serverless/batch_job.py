@@ -90,10 +90,9 @@ def start_extract_job(event, context):
     }
 
 def process_extractions(event, context):
-    paths = [json.loads(record['body'])['path'] for record in event['Records']]
-    _transfer_files_from_ftp_to_s3(paths)
+    s3_keys = [json.loads(record['body'])['key'] for record in event['Records']]
     logger.info('Downloading files from S3')
-    downloaded_file_paths = _download_files_from_s3(paths)
+    downloaded_file_paths = _download_files_from_s3(s3_keys)
     logger.info('Finished downloading files from S3')
     logger.info('Extracting files')
     extract_xml_lambda.extract_files(downloaded_file_paths)
@@ -115,11 +114,11 @@ def process_extractions(event, context):
         'statusCode': 200
     }
 
-def _download_files_from_s3(paths):
+def _download_files_from_s3(s3_keys):
     downloaded_file_paths = []
-    for path in paths:
-        s3_key = path.replace('daily-packages/', '')
-        tmp_path = os.path.join('/tmp', os.path.split(path)[1])
-        s3.download_file(s3_raw_bucket, s3_key, tmp_path)
+    for key in s3_keys:
+        # TODO Use this join technique throughout
+        tmp_path = os.path.join('/tmp', os.path.split(key)[1])
+        s3.download_file(s3_raw_bucket, key, tmp_path)
         downloaded_file_paths.append(tmp_path)
     return downloaded_file_paths
