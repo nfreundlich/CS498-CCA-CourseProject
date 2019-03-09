@@ -16,18 +16,20 @@ provider:
         - 's3:*Object'
       Effect: Allow
       Resource:
-        - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}/*'
         - 'arn:aws:s3:::${opt:initials}-cca-ted-extracted-${opt:stage}/*'
+        - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}/*'
     - Action:
         - 'sqs:*Message'
       Effect: Allow
       Resource:
-        - 'arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}'
+        - 'arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_extractions_${opt:stage}'
+        - 'arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_transfers_${opt:stage}'
   name: aws
   region: eu-west-1
   runtime: python3.7
 
 functions:
+  # TODO Add this back in and use it to extract based on S3 events
   # extract_data:
   #   events:
   #     - existingS3: 
@@ -37,16 +39,30 @@ functions:
   #   handler: extract_xml_lambda.lambda_handler
   #   layers:
   #     - arn:aws:lambda:eu-west-3:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:2
-  start_batch_job:
-    handler: batch_job.start
+  process_transfers:
+    events:
+      - sqs: arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_transfers_${opt:stage}
+    handler: batch_job.process_transfers
     layers:
       - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
+    reservedConcurrency: 2
+    timeout: 900
+  start_extract_job:
+    handler: batch_job.start_extract_job
+    layers:
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
+    timeout: 900
+  start_transfer_job:
+    handler: batch_job.start_transfer_job
+    layers:
+      - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
+    timeout: 900
   process_batch:
     events:
       - sqs: arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_batch_job_${opt:stage}
     handler: batch_job.process_batch
     layers:
-      # TODO Don't hardcode the region
+      # TODO Don't hardcode the region and version
       - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:1
     reservedConcurrency: 2
     timeout: 900
