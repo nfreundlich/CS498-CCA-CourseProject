@@ -57,5 +57,4 @@ functions:
     timeout: 900
 
 plugins:
-  - serverless-plugin-existing-s3
   - serverless-python-requirements
