@@ -437,14 +437,22 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
 
             is_list_col = (col in LIST_COLS)
             for i, item in enumerate(column_data):
-                if is_list_col and not isinstance(item, list):
-                    column_data[i] = [item]
-                elif is_list_col:
-                    column_data[i] = item
-                elif not is_list_col and isinstance(item, list):
-                    column_data[i] = ";".join(item)
+                # if the column should be a list
+                if is_list_col:
+                    # if it is a list nothing needs to be done
+                    if isinstance(item, list):
+                        column_data[i] = item    
+                    # else if it is not a list make it into a list
+                    else:
+                    column_data[i] = [item]                    
+                # if the column should NOT be a list
                 else:
-                    column_data[i] = item
+                    # if it is NOT a list make sure it is a string
+                    if not isinstance(item, list):
+                        column_data[i] = str(item)
+                    # else if it IS a list
+                    else:
+                        column_data[i] = ';'.join(str(x) for x in item)
 
             return_df[col] = column_data   
         except:
