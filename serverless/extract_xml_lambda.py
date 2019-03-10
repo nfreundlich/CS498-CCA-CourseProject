@@ -445,7 +445,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                 elif not is_list_col and isinstance(item, list):
                     column_data[i] = ";".join(item)
                 else:
-                    column_data[i] = item
+                    column_data[i] = str(item)
 
             return_df[col] = column_data   
         except:
