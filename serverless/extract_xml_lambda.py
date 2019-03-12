@@ -441,10 +441,10 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                 if is_list_col:
                     # if it is a list nothing needs to be done
                     if isinstance(item, list):
-                        column_data[i] = item    
+                        column_data[i] = list(item)
                     # else if it is not a list make it into a list
                     else:
-                        column_data[i] = [item]                    
+                        column_data[i] = [item]                   
                 # if the column should NOT be a list
                 else:
                     # if it is NOT a list make sure it is a string
