@@ -1,9 +1,12 @@
+from datetime import datetime
+import itertools
 import json
 import logging
 import os
 
 import boto3
 from fs import open_fs
+from fs.errors import CreateFailed
 from fs.walk import Walker
 
 import extract_xml_lambda
@@ -21,24 +24,40 @@ s3_extracted_bucket = f'{os.environ["INITIALS"]}-cca-ted-extracted-{os.environ["
 
 def start_transfer_job(event, context):
     logger.info('Starting transfer job')
-    dir_to_walk = 'daily-packages/'
+    year, month = None, None
     if 'year' in event and 'month' in event:
-        dir_to_walk = f'{dir_to_walk}{event["year"]}/{event["month"]}/'
-    logger.info('Walking %s', dir_to_walk)
-    with open_fs(f'ftp://guest:guest@ted.europa.eu/{dir_to_walk}') as fs:
-        for path in fs.walk.files(filter=['*.tar.gz']):
-            # TODO Batch and send
-            sqs.send_message(
-                QueueUrl=f'https://sqs.eu-west-3.amazonaws.com/{os.environ["AWS_ACCOUNT_ID"]}/{os.environ["INITIALS"]}_cca_ted_transfers_{os.environ["STAGE"]}',
-                MessageBody=json.dumps({
-                    'path': dir_to_walk + path[1:]
-                })
-            )
-    logger.info('Finished walking %s', dir_to_walk)
+        year = event['year']
+        month = event['month']
+    for year_month in _get_year_month_iterator(year, month):
+        dir_to_walk = f'daily-packages/{year_month[0]}/{year_month[1]}/'
+        try:
+            with open_fs('ftp://guest:guest@ted.europa.eu/' + dir_to_walk) as fs:
+                logger.info('Walking %s', dir_to_walk)
+                for path in fs.walk.files(filter=['*.tar.gz']):
+                    # TODO Batch and send
+                    sqs.send_message(
+                        QueueUrl=f'https://sqs.eu-west-3.amazonaws.com/{os.environ["AWS_ACCOUNT_ID"]}/{os.environ["INITIALS"]}_cca_ted_transfers_{os.environ["STAGE"]}',
+                        MessageBody=json.dumps({
+                            'path': dir_to_walk + path[1:]
+                        })
+                    )
+                logger.info('Finished walking %s', dir_to_walk)
+        except CreateFailed:
+            logger.warn('Directory %s not found', dir_to_walk)
     logger.info('Finished starting transfer job')
     return {
         'statusCode': 200
     }
+
+def _get_year_month_iterator(year=None, month=None):
+    if year is not None and month is not None:
+        years = [year]
+        months = [f'{month:02d}']
+    else:
+        today = datetime.today()
+        years = range(2011, today.year + 1)
+        months = [f'{month:02d}' for month in range(1, 13)]
+    return itertools.product(years, months)
 
 def process_transfers(event, context):
     logger.info('Processing transfers')
