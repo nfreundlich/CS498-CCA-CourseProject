@@ -452,7 +452,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                         column_data[i] = str(item)
                     # else if it IS a list
                     else:
-                        column_data[i] = '|'.join(str(x) for x in item)
+                        column_data[i] = ';'.join(str(x) for x in item)
 
             return_df[col] = column_data   
         except:
