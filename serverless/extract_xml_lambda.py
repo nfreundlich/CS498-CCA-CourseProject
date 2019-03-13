@@ -57,7 +57,7 @@ USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'CONTRACTING_BODY__CA_ACTIVITY__VALUE',
        'CONTRACTING_BODY__CA_TYPE__VALUE', 'LEGAL_BASIS__VALUE',
        'OBJECT_CONTRACT__REFERENCE_NUMBER', 'REF_NOTICE__NO_DOC_OJS',
-       'VALUES__VALUE', 'VALUES__VALUE__CURRENCY', 'VALUES__VALUE__TYPE',
+       'VALUES__VALUE', 'VALUES__VALUE__CURRENCY', 'VALUES__VALUE__TYPE', 'VALUE_EUR',
        'AWARD_CONTRACT__ITEM',
        'AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT',
        'AWARD_CONTRACT__TITLE', 'OBJECT_CONTRACT__VAL_TOTAL',
@@ -449,7 +449,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                 else:
                     # if it is NOT a list make sure it is a string
                     if not isinstance(item, list):
-                        column_data[i] = str(item)
+                        column_data[i] = item
                     # else if it IS a list
                     else:
                         column_data[i] = ';'.join(str(x) for x in item)

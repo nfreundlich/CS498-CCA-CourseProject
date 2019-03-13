@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 s3 = boto3.resource('s3')
-AWS_BUCKET_NAME = '1-cca-ted-raw-dev'
+AWS_BUCKET_NAME = '2-cca-ted-raw-dev'
 
 # Function download_files:
 # FTPs to ftp_path, gets list of files in the directory for the current year and month (note that this may cause
@@ -103,6 +103,9 @@ def upload_to_s3(data_path="/tmp", key="raw_data"):
     for file in files:
         # check if the file already exists so we don't create duplicates
         logger.info('Uploading %s to S3 bucket %s key %s', file, AWS_BUCKET_NAME, key)
+        #year = file[:4]
+        #month = file[4:6]
+        #key = year + "/" + month
         try:
             s3.meta.client.upload_file(Filename = os.path.join(data_path, file), Bucket = AWS_BUCKET_NAME, Key = key + "/" + file)
         except Exception as e:
