@@ -200,10 +200,10 @@ def convert_currencies(values, currencies):
             try:
                 exchange_rate = exchange_rates['rates'][currency]
                 converted_value = float(value) / exchange_rate
-                results.append(converted_value)
+                results.append(str(converted_value))
             # if we don't have a rate for the currency use NaN
             except:
-                results.append(np.nan)
+                results.append("")
                 
     return results
 
@@ -425,9 +425,9 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     
     # try convert Currencies to Euros, some doc types don't have this so it's not a big deal if there's an error
     try:
-        df['VALUE_EUR'] = convert_currencies(df['VALUES_VALUE'].values, df['VALUES_VALUE_CURRENCY'].values)
+        df['VALUE_EUR'] = convert_currencies(df['VALUES__VALUE'].values, df['VALUES__VALUE__CURRENCY'].values)
     except:
-        pass
+        print("ERROR converting currencies")
     
     return_df = pd.DataFrame(columns=USE_COLS)
     for col in USE_COLS:
