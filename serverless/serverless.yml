@@ -55,6 +55,11 @@ functions:
     layers:
       - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:${opt:layers-version}
     timeout: 900
+  download_daily_file:
+    events:
+      - sqs: schedule: cron(0 18 ? * TUE-SAT *)
+    handler: lambda_download_file.lambda_handler
+    timeout: 900
 
 plugins:
   - serverless-python-requirements
