@@ -56,11 +56,8 @@ for file in files[1:]:
     except:
         print("[ERROR] loading", file)
         
-# add YEAR column to data as first 4 chars of DATE    
-df1 = df.withColumn('YEAR', df['DATE'].substr(0, 4))
-
 # partition the DataFrame to 1 partition
-partitioned_dataframe = df1.repartition(1)       
+partitioned_dataframe = df.repartition(1)       
 
 partitioned_dynamicframe = DynamicFrame.fromDF(partitioned_dataframe, glueContext, "partitioned_df")
 

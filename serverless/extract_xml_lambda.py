@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 s3 = boto3.resource('s3')
+s3_extracted_bucket = f'{os.environ["INITIALS"]}-cca-ted-extracted-{os.environ["STAGE"]}'
 
-AWS_BUCKET_NAME = 'cca498'
 USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
-       'AC_AWARD_CRIT__CODE', 'CATEGORY', 'DATE', 'DS_DATE_DISPATCH',
+       'AC_AWARD_CRIT__CODE', 'CATEGORY', 'DATE', 'YEAR', 'DS_DATE_DISPATCH',
        'FILE', 'HEADING', 'ISO_COUNTRY__VALUE', 'LG', 'LG_ORIG',
        'NC_CONTRACT_NATURE', 'NC_CONTRACT_NATURE__CODE', 'NO_DOC_OJS',
        'ORIGINAL_CPV', 'ORIGINAL_CPV_CODE', 'ORIGINAL_CPV_TEXT',
@@ -349,6 +349,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                 
                 header_info = {}
                 header_info['DATE'] = date
+                header_info['YEAR'] = date[:4]
                 header_info['FILE'] = file
                 # extract the info from the codified data section
                 header_info = extract_xml(parsed_xml['TED_EXPORT']['CODED_DATA_SECTION']['CODIF_DATA'], "", header_info)
@@ -470,8 +471,11 @@ def lambda_handler(event, context):
     file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
     print(file_name)
     df.to_parquet("/tmp/" + file_name)
+    year = file_name[:4]
+    month = file_name[4:6]
+    prefix = year + "/" + month
     # upload the file to S3
-    s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
+    s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = s3_extracted_bucket, Key = prefix + "/" + file_name)
     
     return {
         'statusCode': 200,

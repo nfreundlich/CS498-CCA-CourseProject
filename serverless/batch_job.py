@@ -123,10 +123,11 @@ def process_extractions(event, context):
     logger.info('Finished writing to Parquet')
     s3 = boto3.client('s3')
     logger.info('Uploading to S3')
+    prefix = file_name[:4] + "/" + file_name[4:6]
     s3.upload_file(
         Filename = os.path.join('/tmp/', file_name),
         Bucket = s3_extracted_bucket,
-        Key = file_name
+        Key = prefix + "/" + file_name
     )
     logger.info('Finished uploading to S3')
     return {

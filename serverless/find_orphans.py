@@ -24,7 +24,7 @@ def get_raw_files(year, month):
 def get_extracted_files(year, month):
     # get list of extracted files
     extracted_files = []
-    for item in eBucket.objects.filter(Prefix=year+month):
+    for item in eBucket.objects.filter(Prefix=year+"/"+month):
         file_name = item.key.split(".")[0]
         extracted_files.append(file_name)
     
