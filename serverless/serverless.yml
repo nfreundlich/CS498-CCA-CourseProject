@@ -32,7 +32,7 @@ functions:
     events:
       - sqs:
           arn: arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_extractions_${opt:stage}
-          batchSize: 3
+          batchSize: 1
     handler: batch_job.process_extractions
     layers:
       - arn:aws:lambda:eu-west-1:${opt:aws-account-id}:layer:numpy-pandas-pyarrow-pytz:${opt:layers-version}
