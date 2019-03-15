@@ -92,7 +92,7 @@ def download_files(data_path="/tmp", ftp_path="91.250.107.123", username="guest"
             d_file = urllib.request.urlretrieve(file, os.path.join(data_path, file_name))[0]
             downloaded_files.append(d_file)
         except Exception as e:
-            logger.info('Error downloading file %s', file)
+            logger.error('Error downloading file %s', file)
             
     return downloaded_files
 
@@ -116,12 +116,13 @@ def upload_to_s3(data_path="/tmp", key="raw_data"):
             sqs.send_message(
                 QueueUrl=f'https://sqs.eu-west-3.amazonaws.com/{os.environ["AWS_ACCOUNT_ID"]}/{os.environ["INITIALS"]}_cca_ted_extractions_{os.environ["STAGE"]}',
                 MessageBody=json.dumps({
-                    'key': key + "/" + file
+                    'key': key + "/" + file,
+                    'batch': False,
                 })
             )
         except Exception as e:
             print(e)
-            logger.info('Error uploading %s to S3 bucket %s key %s', file, s3_raw_bucket, key)
+            logger.error('Error uploading %s to S3 bucket %s key %s', file, s3_raw_bucket, key)
 
 def lambda_handler(event, context):
     new_files = download_files(max_files=1, delete_files=True)

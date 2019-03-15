@@ -181,7 +181,7 @@ def extract_files(files, delete_files=True, data_path="/tmp"):
                 # if everything was properly extracted we can delete the file
                 os.remove(file)
         except:
-            print("Error extracting", file)
+            logger.error("Error extracting %s", file)
             
     return extracted_files
 
@@ -390,7 +390,8 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                             all_tenders.append((header_info, form_contents))
                             language_tenders.append((header_info, form_contents))
                     except Exception as e:
-                        print("File 1", file, e)
+                        logger.error("File %s", file)
+                        
             logger.info('Finished parsing data from %s', file)
         
         # delete the directory we just read from to avoid conflicts and duplicates
@@ -428,8 +429,8 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     try:
         df['VALUE_EUR'] = convert_currencies(df['VALUES__VALUE'].values, df['VALUES__VALUE__CURRENCY'].values)
     except:
-        print("ERROR converting currencies")
-    
+        logger.error("Error converting currencies")
+        
     return_df = pd.DataFrame(columns=USE_COLS)
     for col in USE_COLS:
         # catch the possibility that the column doesn't exist in the dataframe
@@ -463,11 +464,11 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
 
 def lambda_handler(event, context):
     downloaded_files = download_file(event)
-    print("Extracting files...")
+    logger.info("Extracting files")
     extracted_files = extract_files(downloaded_files)
-    print("Parsing data...")
+    logger.info("Parsing data")
     df = load_data("/tmp")
-    print("Done parsing...")
+    logger.info("Done parsing")
     file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
     print(file_name)
     df.to_parquet("/tmp/" + file_name)

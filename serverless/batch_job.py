@@ -124,11 +124,28 @@ def process_extractions(event, context):
     s3 = boto3.client('s3')
     logger.info('Uploading to S3')
     prefix = file_name[:4] + "/" + file_name[4:6]
-    s3.upload_file(
-        Filename = os.path.join('/tmp/', file_name),
-        Bucket = s3_extracted_bucket,
-        Key = prefix + "/" + file_name
-    )
+    
+    # check if the event is from a batch job or not
+    record_body = json.loads(event['Records'][0]['body'])
+    print(record_body)
+    batch_job = True
+    if 'batch' in record_body and record_body['batch'] == False:
+        batch_job = False
+        
+    # if it is a batch job upload to the year/month key
+    if batch_job:
+        s3.upload_file(
+            Filename = os.path.join('/tmp/', file_name),
+            Bucket = s3_extracted_bucket,
+            Key = prefix + "/" + file_name
+        )
+    # else upload to merged/new_data/ so the file is available for queries, but still kept separate for future merging
+    else:
+        s3.upload_file(
+            Filename = os.path.join('/tmp/', file_name),
+            Bucket = s3_extracted_bucket,
+            Key = "merged/new_data/" + file_name
+        )
     logger.info('Finished uploading to S3')
     return {
         'statusCode': 200
