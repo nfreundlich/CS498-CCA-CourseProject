@@ -22,8 +22,8 @@ USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'AC_AWARD_CRIT__CODE', 'CATEGORY', 'DATE', 'YEAR', 'DS_DATE_DISPATCH',
        'FILE', 'HEADING', 'ISO_COUNTRY__VALUE', 'LG', 'LG_ORIG',
        'NC_CONTRACT_NATURE', 'NC_CONTRACT_NATURE__CODE', 'NO_DOC_OJS',
-       'ORIGINAL_CPV', 'ORIGINAL_CPV_CODE', 'ORIGINAL_CPV_TEXT',
-       'ORIGINAL_CPV__CODE', 'PR_PROC', 'PR_PROC__CODE', 'REF_NO',
+       'ORIGINAL_CPV_CODE', 'ORIGINAL_CPV_TEXT',
+       'PR_PROC', 'PR_PROC__CODE', 'REF_NO',
        'RP_REGULATION', 'RP_REGULATION__CODE', 'TD_DOCUMENT_TYPE',
        'TD_DOCUMENT_TYPE__CODE', 'TY_TYPE_BID', 'TY_TYPE_BID__CODE',
        'COMPLEMENTARY_INFO__ADDRESS_REVIEW_BODY__ADDRESS',
@@ -459,7 +459,15 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
             return_df[col] = column_data   
         except:
             pass
-        
+    
+    # add some additional columns containing the first items in some of the list columns
+    return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE'].map(lambda x: x[0])
+    return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
+    return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE'].map(lambda x: x[0])
+    return_df['MAIN_MA_MAIN_ACTIVITIES__CODE'] = return_df['MA_MAIN_ACTIVITIES__CODE'].map(lambda x: x[0])
+    return_df['MAIN_OBJECT_CONTRACT__OBJECT_DESCR__DURATION'] = return_df['OBJECT_CONTRACT__OBJECT_DESCR__DURATION'].map(lambda x: x[0])
+    return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'].map(lambda x: x[0])
+    
     return return_df
 
 def lambda_handler(event, context):
