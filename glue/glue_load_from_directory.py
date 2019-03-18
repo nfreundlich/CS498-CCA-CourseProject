@@ -32,16 +32,19 @@ job.init(args['JOB_NAME'], args)
 ## @return: datasource0
 ## @inputs: []
 datasource0 = glueContext.create_dynamic_frame_from_options(connection_type = "s3", connection_options = {"paths": ["s3://" + s3_extracted_bucket + "/" + prefix]}, format = "parquet")
+
 ## @type: ApplyMapping
 ## @args: [mapping = mappings
 ## @return: applymapping1
 ## @inputs: [frame = datasource0]
 applymapping1 = ApplyMapping.apply(frame = datasource0 , mappings = mappings, transformation_ctx = "applymapping1")
+
 ## @type: ResolveChoice
 ## @args: [choice = "make_struct", transformation_ctx = "resolvechoice2"]
 ## @return: resolvechoice2
 ## @inputs: [frame = applymapping1]
 resolvechoice2 = ResolveChoice.apply(frame = applymapping1, choice = "make_struct", transformation_ctx = "resolvechoice2")
+
 ## @type: DropNullFields
 ## @args: [transformation_ctx = "dropnullfields3"]
 ## @return: dropnullfields3
@@ -49,7 +52,8 @@ resolvechoice2 = ResolveChoice.apply(frame = applymapping1, choice = "make_struc
 dropnullfields3 = DropNullFields.apply(frame = resolvechoice2, transformation_ctx = "dropnullfields3")
 
 # partition the DataFrame to 1 partition
-partitioned_dataframe = dropnullfields3.toDF().repartition(1)       
+partitioned_dataframe = dropnullfields3.toDF().repartition(1)
+
 # convert back to DynamicFrame
 partitioned_dynamicframe = DynamicFrame.fromDF(partitioned_dataframe, glueContext, "partitioned_df")
 
