@@ -123,11 +123,10 @@ def process_extractions(event, context):
     logger.info('Finished writing to Parquet')
     s3 = boto3.client('s3')
     logger.info('Uploading to S3')
-    prefix = file_name[:4] + "/" + file_name[4:6]
+    prefix = file_name[:4]
     
     # check if the event is from a batch job or not
     record_body = json.loads(event['Records'][0]['body'])
-    print(record_body)
     batch_job = True
     if 'batch' in record_body and record_body['batch'] == False:
         batch_job = False

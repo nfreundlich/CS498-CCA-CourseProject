@@ -478,11 +478,8 @@ def lambda_handler(event, context):
     df = load_data("/tmp")
     logger.info("Done parsing")
     file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
-    print(file_name)
     df.to_parquet("/tmp/" + file_name)
-    year = file_name[:4]
-    month = file_name[4:6]
-    prefix = year + "/" + month
+    prefix = file_name[:4]
     # upload the file to S3
     s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = s3_extracted_bucket, Key = prefix + "/" + file_name)
     
