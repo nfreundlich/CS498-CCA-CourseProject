@@ -106,7 +106,7 @@ def upload_to_s3(data_path="/tmp", key="raw_data"):
         try:
             s3.meta.client.upload_file(Filename = os.path.join(data_path, file), Bucket = AWS_BUCKET_NAME, Key = key + "/" + file)
         except Exception as e:
-            logger.info('Error uploading %s to S3 bucket %s key %', file, AWS_BUCKET_NAME, key)
+            logger.info('Error uploading %s to S3 bucket %s key %s', file, AWS_BUCKET_NAME, key)
 
 def lambda_handler(event, context):
     new_files = download_files(max_files=1, delete_files=True)
