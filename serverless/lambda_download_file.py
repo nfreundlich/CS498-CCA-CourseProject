@@ -121,7 +121,6 @@ def upload_to_s3(data_path="/tmp", key="raw_data"):
                 })
             )
         except Exception as e:
-            print(e)
             logger.error('Error uploading %s to S3 bucket %s key %s', file, s3_raw_bucket, key)
 
 def lambda_handler(event, context):
