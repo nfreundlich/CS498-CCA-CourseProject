@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 s3 = boto3.resource('s3')
+s3_extracted_bucket = f'{os.environ["INITIALS"]}-cca-ted-extracted-{os.environ["STAGE"]}'
 
-AWS_BUCKET_NAME = 'cca498'
 USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
-       'AC_AWARD_CRIT__CODE', 'CATEGORY', 'DATE', 'DS_DATE_DISPATCH',
+       'AC_AWARD_CRIT__CODE', 'CATEGORY', 'DATE', 'YEAR', 'DS_DATE_DISPATCH',
        'FILE', 'HEADING', 'ISO_COUNTRY__VALUE', 'LG', 'LG_ORIG',
        'NC_CONTRACT_NATURE', 'NC_CONTRACT_NATURE__CODE', 'NO_DOC_OJS',
-       'ORIGINAL_CPV', 'ORIGINAL_CPV_CODE', 'ORIGINAL_CPV_TEXT',
-       'ORIGINAL_CPV__CODE', 'PR_PROC', 'PR_PROC__CODE', 'REF_NO',
+       'ORIGINAL_CPV_CODE', 'ORIGINAL_CPV_TEXT',
+       'PR_PROC', 'PR_PROC__CODE', 'REF_NO',
        'RP_REGULATION', 'RP_REGULATION__CODE', 'TD_DOCUMENT_TYPE',
        'TD_DOCUMENT_TYPE__CODE', 'TY_TYPE_BID', 'TY_TYPE_BID__CODE',
        'COMPLEMENTARY_INFO__ADDRESS_REVIEW_BODY__ADDRESS',
@@ -57,7 +57,7 @@ USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'CONTRACTING_BODY__CA_ACTIVITY__VALUE',
        'CONTRACTING_BODY__CA_TYPE__VALUE', 'LEGAL_BASIS__VALUE',
        'OBJECT_CONTRACT__REFERENCE_NUMBER', 'REF_NOTICE__NO_DOC_OJS',
-       'VALUES__VALUE', 'VALUES__VALUE__CURRENCY', 'VALUES__VALUE__TYPE',
+       'VALUES__VALUE', 'VALUES__VALUE__CURRENCY', 'VALUES__VALUE__TYPE', 'VALUE_EUR',
        'AWARD_CONTRACT__ITEM',
        'AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT',
        'AWARD_CONTRACT__TITLE', 'OBJECT_CONTRACT__VAL_TOTAL',
@@ -181,7 +181,7 @@ def extract_files(files, delete_files=True, data_path="/tmp"):
                 # if everything was properly extracted we can delete the file
                 os.remove(file)
         except:
-            print("Error extracting", file)
+            logger.error("Error extracting %s", file)
             
     return extracted_files
 
@@ -200,10 +200,10 @@ def convert_currencies(values, currencies):
             try:
                 exchange_rate = exchange_rates['rates'][currency]
                 converted_value = float(value) / exchange_rate
-                results.append(converted_value)
+                results.append(str(converted_value))
             # if we don't have a rate for the currency use NaN
             except:
-                results.append(np.nan)
+                results.append("")
                 
     return results
 
@@ -323,7 +323,6 @@ data_path = "/tmp"
 def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice', 'Contract notice', 'Additional information']):
     language_tenders = []
     all_tenders = []
-    
         
     # loop through the files
     for dir_ in os.listdir(data_dir):
@@ -335,7 +334,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
         xml_files = [file for file in files if file.endswith('.xml')]
         for file in xml_files:
             # read the contents of the file
-            logger.info('Parsing data from %s', file)
+            # logger.info('Parsing data from %s', file)
             with io.open(os.path.join(data_dir, dir_, file), 'r', encoding="utf-8") as f:
                 xml = f.read()
                 parsed_xml = xmltodict.parse(xml)
@@ -349,6 +348,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                 
                 header_info = {}
                 header_info['DATE'] = date
+                header_info['YEAR'] = date[:4]
                 header_info['FILE'] = file
                 # extract the info from the codified data section
                 header_info = extract_xml(parsed_xml['TED_EXPORT']['CODED_DATA_SECTION']['CODIF_DATA'], "", header_info)
@@ -389,8 +389,9 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                             all_tenders.append((header_info, form_contents))
                             language_tenders.append((header_info, form_contents))
                     except Exception as e:
-                        print("File 1", file, e)
-            logger.info('Finished parsing data from %s', file)
+                        logger.error("File %s", file)
+                        
+            # logger.info('Finished parsing data from %s', file)
         
         # delete the directory we just read from to avoid conflicts and duplicates
         # this may not be necessary and we may want to revisit it
@@ -425,10 +426,10 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     
     # try convert Currencies to Euros, some doc types don't have this so it's not a big deal if there's an error
     try:
-        df['VALUE_EUR'] = convert_currencies(df['VALUES_VALUE'].values, df['VALUES_VALUE_CURRENCY'].values)
+        df['VALUE_EUR'] = convert_currencies(df['VALUES__VALUE'].values, df['VALUES__VALUE__CURRENCY'].values)
     except:
-        pass
-    
+        logger.error("Error converting currencies")
+        
     return_df = pd.DataFrame(columns=USE_COLS)
     for col in USE_COLS:
         # catch the possibility that the column doesn't exist in the dataframe
@@ -449,7 +450,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                 else:
                     # if it is NOT a list make sure it is a string
                     if not isinstance(item, list):
-                        column_data[i] = str(item)
+                        column_data[i] = item
                     # else if it IS a list
                     else:
                         column_data[i] = ';'.join(str(x) for x in item)
@@ -457,21 +458,55 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
             return_df[col] = column_data   
         except:
             pass
-        
+    
+    # add some additional columns containing the first items in some of the list columns
+    # if there is an error the column is not a list so just use the value in it
+    try:
+        return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE']
+    try:
+        return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE']
+    try:
+        return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE']
+    try:
+        return_df['MAIN_MA_MAIN_ACTIVITIES__CODE'] = return_df['MA_MAIN_ACTIVITIES__CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_MA_MAIN_ACTIVITIES__CODE'] = return_df['MA_MAIN_ACTIVITIES__CODE']
+    try:    
+        return_df['MAIN_OBJECT_CONTRACT__OBJECT_DESCR__DURATION'] = return_df['OBJECT_CONTRACT__OBJECT_DESCR__DURATION'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_OBJECT_CONTRACT__OBJECT_DESCR__DURATION'] = return_df['OBJECT_CONTRACT__OBJECT_DESCR__DURATION']
+    try:    
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE']
+    
+    return_df.dropna(axis=1, how="all", inplace=True)
+    
     return return_df
 
 def lambda_handler(event, context):
     downloaded_files = download_file(event)
-    print("Extracting files...")
+    logger.info("Extracting files")
     extracted_files = extract_files(downloaded_files)
-    print("Parsing data...")
+    logger.info("Parsing data")
     df = load_data("/tmp")
-    print("Done parsing...")
+    logger.info("Done parsing")
     file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
-    print(file_name)
+    # replace "_" with "-" as underscores may cause problems with Glue?
+    file_name = str.replace(file_name, "_", "-")
+    logger.info("File name " + file_name)
     df.to_parquet("/tmp/" + file_name)
+    year = file_name[:4]
+    month = file_name[4:6]
+    prefix = year + "/" + month
     # upload the file to S3
-    s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = "1-cca-ted-extracted-dev", Key = file_name)
+    s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = s3_extracted_bucket, Key = prefix + "/" + file_name)
     
     return {
         'statusCode': 200,
