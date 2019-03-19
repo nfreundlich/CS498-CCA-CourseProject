@@ -32,3 +32,6 @@ var/
 
 # Serverless directories
 .serverless
+
+# PyCharm files
+.idea
