@@ -323,7 +323,6 @@ data_path = "/tmp"
 def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice', 'Contract notice', 'Additional information']):
     language_tenders = []
     all_tenders = []
-    
         
     # loop through the files
     for dir_ in os.listdir(data_dir):
@@ -335,7 +334,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
         xml_files = [file for file in files if file.endswith('.xml')]
         for file in xml_files:
             # read the contents of the file
-            logger.info('Parsing data from %s', file)
+            # logger.info('Parsing data from %s', file)
             with io.open(os.path.join(data_dir, dir_, file), 'r', encoding="utf-8") as f:
                 xml = f.read()
                 parsed_xml = xmltodict.parse(xml)
@@ -392,7 +391,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                     except Exception as e:
                         logger.error("File %s", file)
                         
-            logger.info('Finished parsing data from %s', file)
+            # logger.info('Finished parsing data from %s', file)
         
         # delete the directory we just read from to avoid conflicts and duplicates
         # this may not be necessary and we may want to revisit it
@@ -461,12 +460,33 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
             pass
     
     # add some additional columns containing the first items in some of the list columns
-    return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE'].map(lambda x: x[0])
-    return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
-    return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE'].map(lambda x: x[0])
-    return_df['MAIN_MA_MAIN_ACTIVITIES__CODE'] = return_df['MA_MAIN_ACTIVITIES__CODE'].map(lambda x: x[0])
-    return_df['MAIN_OBJECT_CONTRACT__OBJECT_DESCR__DURATION'] = return_df['OBJECT_CONTRACT__OBJECT_DESCR__DURATION'].map(lambda x: x[0])
-    return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'].map(lambda x: x[0])
+    # if there is an error the column is not a list so just use the value in it
+    try:
+        return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE']
+    try:
+        return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE']
+    try:
+        return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE']
+    try:
+        return_df['MAIN_MA_MAIN_ACTIVITIES__CODE'] = return_df['MA_MAIN_ACTIVITIES__CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_MA_MAIN_ACTIVITIES__CODE'] = return_df['MA_MAIN_ACTIVITIES__CODE']
+    try:    
+        return_df['MAIN_OBJECT_CONTRACT__OBJECT_DESCR__DURATION'] = return_df['OBJECT_CONTRACT__OBJECT_DESCR__DURATION'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_OBJECT_CONTRACT__OBJECT_DESCR__DURATION'] = return_df['OBJECT_CONTRACT__OBJECT_DESCR__DURATION']
+    try:    
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE']
+    
+    return_df.dropna(axis=1, how="all", inplace=True)
     
     return return_df
 
@@ -478,8 +498,13 @@ def lambda_handler(event, context):
     df = load_data("/tmp")
     logger.info("Done parsing")
     file_name = downloaded_files[0].split("/")[-1].split(".")[0] + ".parquet"
+    # replace "_" with "-" as underscores may cause problems with Glue?
+    file_name = str.replace(file_name, "_", "-")
+    logger.info("File name " + file_name)
     df.to_parquet("/tmp/" + file_name)
-    prefix = file_name[:4]
+    year = file_name[:4]
+    month = file_name[4:6]
+    prefix = year + "/" + month
     # upload the file to S3
     s3.meta.client.upload_file(Filename = os.path.join("/tmp/", file_name), Bucket = s3_extracted_bucket, Key = prefix + "/" + file_name)
     
