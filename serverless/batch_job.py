@@ -22,7 +22,19 @@ s3_extracted_bucket = f'{os.environ["INITIALS"]}-cca-ted-extracted-{os.environ["
 
 # TODO Handler errors and exceptions
 
+
 def start_transfer_job(event, context):
+    """
+    Launch files transfer from ftp to s3.
+    Usage: sls invoke -f start_transfer_job --aws-account-id [your account id]
+                                 --initials [your initials]
+                                 --layers-version 6
+                                 --stage dev
+                                 --data '{"year": 2019, "month": 3}'
+    :param event: --data '{"year": 2019, "month": 3}'; year and month to be downloaded
+    :param context: TBD
+    :return: message in sqs
+    """
     logger.info('Starting transfer job')
     year, month = None, None
     if 'year' in event and 'month' in event:
@@ -60,6 +72,12 @@ def _get_year_month_iterator(year=None, month=None):
     return itertools.product(years, months)
 
 def process_transfers(event, context):
+    """
+    Downloads files from ftp to s3.
+    :param event: TBD
+    :param context: TBD
+    :return: zipped files to s3 in raw_bucket
+    """
     logger.info('Processing transfers')
     paths = [json.loads(record['body'])['path'] for record in event['Records']]
     _transfer_files_from_ftp_to_s3(paths)
@@ -89,6 +107,13 @@ def _transfer_files_from_ftp_to_s3(paths):
             os.remove(tmp_path)
 
 def start_extract_job(event, context):
+    """
+    Launch extract job.
+    Usage: sls invoke -f start_extract_job --aws-account-id 414969896231 --initials nfr --layers-version 6 --stage dev
+    :param event: TBD
+    :param context: TBD
+    :return: exract info to sqs ted_extraction
+    """
     logger.info('Starting extract job')
     s3_key_prefix = ''
     if 'year' in event and 'month' in event:
@@ -109,6 +134,12 @@ def start_extract_job(event, context):
     }
 
 def process_extractions(event, context):
+    """
+    Reads messages from ted_extractions sqs and extracts files.
+    :param event: TBD
+    :param context: TBD
+    :return: parquet files on to s3_extracted bucket
+    """
     s3_keys = [json.loads(record['body'])['key'] for record in event['Records']]
     logger.info('Downloading files from S3')
     downloaded_file_paths = _download_files_from_s3(s3_keys)
