@@ -9,7 +9,7 @@ resource "aws_glue_crawler" "extracted" {
     role = "${var.iam_role_arn}"
     s3_target = [
         {
-            path = "s3://${var.initials}-cca-ted-extracted-${var.stage}"
+            path = "s3://${var.initials}-cca-ted-extracted-${var.stage}/merged"
         }
     ]
 }
