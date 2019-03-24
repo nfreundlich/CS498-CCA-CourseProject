@@ -392,7 +392,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
                         logger.error("File %s", file)
                         
             # logger.info('Finished parsing data from %s', file)
-        
+            
         # delete the directory we just read from to avoid conflicts and duplicates
         # this may not be necessary and we may want to revisit it
         shutil.rmtree(os.path.join(data_dir, dir_))
@@ -414,8 +414,15 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
         
         flattened = extract_xml(tender, "", flattened)
         
+        # older documents have the value in different columns, we should catch those
+        if "VALUES_LIST__VALUES__SINGLE_VALUE__VALUE" in flattened and "VALUES__VALUE" not in flattened:
+            flattened['VALUES__VALUE'] = flattened['VALUES_LIST__VALUES__SINGLE_VALUE__VALUE']
+            flattened['VALUES__VALUE__CURRENCY'] = flattened['VALUES_LIST__VALUES__SINGLE_VALUE__VALUE__CURRENCY']
+        elif "VALUES_LIST__VALUES__RANGE_VALUE__VALUE" in flattened and "VALUES__VALUE" not in flattened:
+            flattened['VALUES__VALUE'] = flattened['VALUES_LIST__VALUES__RANGE_VALUE__VALUE'][0]
+            flattened['VALUES__VALUE__CURRENCY'] = flattened['VALUES_LIST__VALUES__RANGE_VALUE__VALUE__CURRENCY'][0]
         parsed_data.append(flattened)
-    
+        
     # clean up unneeded data
     del(language_tenders)
     
