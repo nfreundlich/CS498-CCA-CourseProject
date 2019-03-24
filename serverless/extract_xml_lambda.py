@@ -320,7 +320,7 @@ data_path = "/tmp"
 ## - doc_type_filter - if specified function will only return XML documents of the specified type
 ## Returns - 
 ## - dataframe of parsed documents
-def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice', 'Contract notice', 'Additional information']):
+def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice', 'Contract notice', 'Contract award', 'Additional information']):
     language_tenders = []
     all_tenders = []
         
