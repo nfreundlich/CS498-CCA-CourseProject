@@ -8,9 +8,11 @@ Diagram [here](https://docs.google.com/drawings/d/1mLhY9xiNVu2kDNetq86GDVVuERsA6
 
 To set up AWS buckets, follow steps in ./terraform/README.md.
 
+Remark: if you change the bucket configuration in terraform, you need to delete the _.terraform_ folder and run the initialization again.
+
 ## 2. Serverless
 
-We use the Serverless framework to develop and deploy AWS Lambda functions (https://serverless.com/framework/docs/providers/aws/guide/intro/).
+We use the [Serverless](https://serverless.com/framework/docs/providers/aws/guide/intro/) framework to deploy AWS Lambda functions.
 
 * **Install node.js**: Download [here](https://nodejs.org/en/download/)
 
@@ -18,66 +20,60 @@ We use the Serverless framework to develop and deploy AWS Lambda functions (http
 
 * **Setup AWS credentials**: Documentation [here](https://serverless.com/framework/docs/providers/aws/guide/credentials/)
 
-* Install plugins: `serverless pugin install --name serverless-python-requirements --initials [initials] --aws-account-id [account id] --stage [stage] ----layers-version [layers version]`
+* **Install plugins**: `serverless pugin install --name serverless-python-requirements --initials [initials] --aws-account-id [account id] --stage [stage] --layers-version [version]`
 
-**Create SQS queue**:
-* Doc [here](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-create-queue.html)
-* To read messages in a queue:
-    * `aws sqs receive-message --queue-url https://sqs.eu-west-1.amazonaws.com/[queue identifier] 
---region 'eu-west-1'`
-
-
-**Deploy**:
-* `cd lambda-layers; serverless deploy`
-* `cd serverless; serverless deploy --aws-account-id [account id] --initials nfr --layers-version 6 --stage dev
-`
-
-* Remark: layer version [here](https://eu-west-1.console.aws.amazon.com/lambda/home?region=eu-west-1#/layers)
+* **The configuration will create**":
+    * S3 buckets (adding initials and staging environment for each): cca-ted-raw, cca-ted-extracted, glue-script
+    * SQS queues: cca_ted_transfers, cca_ted_extractions
+    * Glue jobs (glue-merged) and crawlers (ted-extracted)
 
 **Install aws cli**:
 Documentation [here](https://docs.aws.amazon.com/cli/latest/userguide/install-macos.html)
 
-**Check your S3 buckets**:
- aws s3 ls "[your initials]-cca-ted-raw-dev/2019/03/"
+**Deploy**:
+* Deploy lambda layers: `cd lambda-layers; serverless deploy`
+* Deploy serverless application: `cd serverless; serverless deploy --aws-account-id [account id] --initials [initials] --layers-version [version] --stage [stage]`
+* Remark: layer version [here](https://eu-west-1.console.aws.amazon.com/lambda/home?region=eu-west-1#/layers)
 
-## 3. Lambdas
+
+## 3. Initial transfer and extract job
+**Deploy lambda functions**:
 * `cd serverless`
+* `sls deploy --aws-account-id [account id] --initials nfr --layers-version [version] --stage [stage]`
 
 **Start transfer job**:
+* Transfer files via ftp to S3 raw bucket
 * `sls invoke -f start_transfer_job --aws-account-id [your account id] 
                                  --initials [your initials] 
-                                 --layers-version 6 
+                                 --layers-version [version] 
                                  --stage dev 
                                  --data '{"year": 2019, "month": 3}'`
 
 **Start extract job**:
-* `sls invoke -f start_extract_job --aws-account-id [account id] --initials [initials] --layers-version 6 --stage dev`
+* Extracts previously transferred files to S3 extracted bucket
+* `sls invoke -f start_extract_job --aws-account-id [account id] --initials [initials] --layers-version [version] --stage dev`
 
-**Add a step function**:
-- define a state machine
+**Using a step function / state machine**:
+* TBD
 
 **Glue**:
-The glue script now takes two parameters --YEAR and --BUCKET.
-ERIC's thing:
-Hi. For Glue, make sure you have pulled from branch glue_merge because the data files created with older versions of the extract_xml script won't work. I've been creating the jobs using the AWS interface (https://eu-west-1.console.aws.amazon.com/glue/home?region=eu-west-1#etl:tab=jobs), but it will probably be automated at some point. Click "Add Job", make sure the type is "Spark" and the language is "Python", make sure an IAM role is chosen that has permissions to read from and write to S3. You can use any datasource, I don't actually read from any of the databases. For "Choose a data target" select "Create tables in your data target", Data store is Amazon S3, Format is parquet, and target path is the extracted bucket with "/merged" on the end of it. Then you can click through the rest of the screens until you get to the script at which point cut and paste the contents of glue/glue_load_from_directory.py in, making sure you change the value of "s3_extracted_bucket" because it currently points to my bucket.
-To run it click on "Run job" from the edit script page and make sure you open the "Security configuration, script libraries and job parameters" section and under Job parameters add key "--YEAR" with the value the year you want to merge.
-I want to emphasize that the script will fail unless you have extracted the data with the latest version of the extract_xml_lambda.py so make sure you have pulled from branch glue_merge and then deployed the code from the serverless directory.
-
-Better way to set up the Glue job from the interface.
-Click "Add job", in the first screen make sure "ETL Language" is Python and under "This job runs" select "an existing script that you provide." Click on next and then "Save job and edit script." Paste the contents of the .py file in. I'm not sure how to add the Glue job programmatically, I imagine that would go through terraform.
+* The glue job is executed manually from AWS console
+* The job (glue_merge) takes 2 parameters, _--YEAR_ and _--BUCKET_, already initialized during job creation, 
+        with your initials and year 2019. This is configurable from Glue job parameters interface in AWS console. 
 
 **Crawlers**:
-Run the crawlers in glue
-
+* Once the glue job finished with success, we have to run the crawlers
+* From AWS console - Glue, run _ted_extracted_ crawler. Based on the glue script's output, 
+        this will generate a table (_merged_) readable in Athena. 
 
 **Athena**:
-#TODO
---> already done from glue
+* Athena can access the table _merged_, generated from _ted_extracted_dev_ database 
 
 **Quicksight**:
-#TODO
+* Create a QuickSight account
+* During the creation, the account must be set up to allow access to both Athena and the related S3 bucket (_ted_extracted_dev_)
+* Import data to SPICE and create visualization based on it 
 
-**How to test this**:
---> setup a local falke AWS resource
---> called localstack - fakes AWS API-s, bring up the localstack
---> write tests against local stack
+**Other considerations**:
+* Ideas for testing the serverless enviroment: if time allows, set up a localstack enviroment and run unit tests locally
+
