@@ -154,4 +154,9 @@ resource "aws_glue_job" "example" {
   command {
     script_location = "s3://${var.initials}-glue-script-${var.stage}/glue_merge_script.py"
   }
+
+  default_arguments = {
+    "--BUCKET" = "${var.initials}-cca-ted-extracted-${var.stage}",
+    "--YEAR" = "2019"
+  }
 }
