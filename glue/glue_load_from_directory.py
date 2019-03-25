@@ -60,5 +60,5 @@ partitioned_dynamicframe = DynamicFrame.fromDF(partitioned_dataframe, glueContex
 ## @args: [connection_type = "s3", connection_options = {"path": "s3://2-cca-ted-extracted-dev/merged"}, format = "parquet", transformation_ctx = "datasink4"]
 ## @return: datasink4
 ## @inputs: [frame = dropnullfields3]
-datasink4 = glueContext.write_dynamic_frame.from_options(frame = partitioned_dynamicframe, connection_type = "s3", connection_options = {"path": "s3://2-cca-ted-extracted-dev/merged", "partitionKeys": ["YEAR"]}, format = "parquet", transformation_ctx = "datasink4")
+datasink4 = glueContext.write_dynamic_frame.from_options(frame = partitioned_dynamicframe, connection_type = "s3", connection_options = {"path": "s3://" + bucket + "/merged", "partitionKeys": ["YEAR"]}, format = "parquet", transformation_ctx = "datasink4")
 job.commit()
