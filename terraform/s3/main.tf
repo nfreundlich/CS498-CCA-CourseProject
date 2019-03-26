@@ -8,6 +8,18 @@ resource "aws_s3_bucket" "extracted" {
     bucket = "${var.initials}-cca-ted-extracted-${var.stage}"
 }
 
+resource "aws_s3_bucket" "glue_scripts" {
+    acl = "private"
+    bucket = "${var.initials}-glue-scripts-${var.stage}"
+}
+
+resource "aws_s3_bucket_object" "merge_files_script" {
+  bucket = "${var.initials}-glue-scripts-${var.stage}"
+  etag = "${md5(file("../glue/merge_files.py"))}"
+  key    = "merge_files_script.py"
+  source = "../glue/merge_files.py"
+}
+
 output "s3_bucket_extracted_arn" {
     value = "${aws_s3_bucket.extracted.arn}"
 }
