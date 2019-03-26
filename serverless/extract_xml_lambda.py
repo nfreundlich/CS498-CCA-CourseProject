@@ -473,13 +473,13 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     except:
         return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE']
     try:
-        return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
+        return_df['MAIN_n2016_TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
     except:
-        return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE']
+        return_df['MAIN_n2016_TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE']
     try:
-        return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE'].map(lambda x: x[0])
+        return_df['MAIN_n2016_PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE'].map(lambda x: x[0])
     except:
-        return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE']
+        return_df['MAIN_n2016_PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE']
     try:
         return_df['MAIN_MA_MAIN_ACTIVITIES__CODE'] = return_df['MA_MAIN_ACTIVITIES__CODE'].map(lambda x: x[0])
     except:
