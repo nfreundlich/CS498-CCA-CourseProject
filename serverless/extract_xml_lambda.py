@@ -495,6 +495,10 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     
     return_df.dropna(axis=1, how="all", inplace=True)
     
+    # rename columns to remove invalid characters
+    new_cols = [col.replace(":", "_") for col in return_df.columns]
+    return_df.columns = new_cols
+    
     return return_df
 
 def lambda_handler(event, context):
