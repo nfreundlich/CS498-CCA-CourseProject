@@ -161,6 +161,12 @@ def download_file(event):
         
     return downloaded_files
 
+def sum_list(x):
+    try:
+        return sum([int(y) for y in x])
+    except:
+        return 0
+        
 def extract_files(files, delete_files=True, data_path="/tmp"):
     extracted_files = []
     
@@ -473,6 +479,27 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     except:
         return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE']
     try:
+        return_df['MAIN_CPV_TEXT'] = return_df['ORIGINAL_CPV_TEXT'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_CPV_TEXT'] = return_df['ORIGINAL_CPV_TEXT']
+    try:
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT']
+   
+    try:
+        return_df['TOTAL_TENDERS_RECEIVED'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__TENDERS__NB_TENDERS_RECEIVED'].map(sum_list)
+    except:
+        return_df['TOTAL_TENDERS_RECEIVED'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__TENDERS__NB_TENDERS_RECEIVED']
+    try:
+        return_df['TOTAL_CONTRACT_AWARD_VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'].map(sum_list)
+    except:
+        return_df['TOTAL_CONTRACT_AWARD_VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL']
+    try:
+        return_df['CONTRACT_AWARD_CURR'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL__CURRENCY'].map(lambda x: x[0])
+    except:
+        return_df['CONTRACT_AWARD_CURR'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL__CURRENCY']
+    try:
         return_df['MAIN_n2016_TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
     except:
         return_df['MAIN_n2016_TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE']
@@ -492,7 +519,16 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
         return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'].map(lambda x: x[0])
     except:
         return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE']
+    try:    
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL']
     
+    try:
+        df['TOTAL_CONTRACT_AWARD_VALUE_EUR'] = convert_currencies(df['TOTAL_CONTRACT_AWARD_VALUE'].values, df['CONTRACT_AWARD_CURR'].values)
+    except:
+        logger.error("Error converting currencies")
+        
     return_df.dropna(axis=1, how="all", inplace=True)
     
     # rename columns to remove invalid characters
