@@ -37,8 +37,9 @@ def start_transfer_job(event, context):
     """
     logger.info('Starting transfer job')
     year, month = None, None
-    if 'year' in event and 'month' in event:
+    if 'year' in event:
         year = event['year']
+    if 'month' in event:
         month = event['month']
     for year_month in _get_year_month_iterator(year, month):
         dir_to_walk = f'daily-packages/{year_month[0]}/{year_month[1]}/'
@@ -66,9 +67,13 @@ def _get_year_month_iterator(year=None, month=None):
         years = [year]
         months = [f'{month:02d}']
     else:
-        today = datetime.today()
-        years = range(2011, today.year + 1)
-        months = [f'{month:02d}' for month in range(1, 13)]
+        if year is not None and month is None:
+            years = [year]
+            months = [f'{month:02d}' for month in range(1, 13)]
+        else:
+            today = datetime.today()
+            years = range(2011, today.year + 1)
+            months = [f'{month:02d}' for month in range(1, 13)]
     return itertools.product(years, months)
 
 def process_transfers(event, context):
