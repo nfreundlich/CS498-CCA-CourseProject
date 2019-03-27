@@ -16,7 +16,7 @@ resource "aws_s3_bucket" "glue_scripts" {
 resource "aws_s3_bucket_object" "merge_files_script" {
   bucket = "${var.initials}-glue-scripts-${var.stage}"
   etag = "${md5(file("../glue/merge_files.py"))}"
-  key    = "merge_files_script.py"
+  key    = "merge_files.py"
   source = "../glue/merge_files.py"
 }
 
