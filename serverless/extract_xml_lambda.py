@@ -163,7 +163,7 @@ def download_file(event):
 
 def sum_list(x):
     try:
-        return sum([int(y) for y in x])
+        return sum([float(y) for y in x])
     except:
         return 0
         
@@ -524,10 +524,10 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     except:
         return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL']
     
-    try:
-        df['TOTAL_CONTRACT_AWARD_VALUE_EUR'] = convert_currencies(df['TOTAL_CONTRACT_AWARD_VALUE'].values, df['CONTRACT_AWARD_CURR'].values)
-    except:
-        logger.error("Error converting currencies")
+    #try:
+    #    return_df['TOTAL_CONTRACT_AWARD_VALUE_EUR'] = convert_currencies(return_df['TOTAL_CONTRACT_AWARD_VALUE'].values, return_df['CONTRACT_AWARD_CURR'].values).astype(str)
+    #except:
+    #    logger.error("Error converting currencies")
         
     return_df.dropna(axis=1, how="all", inplace=True)
     
