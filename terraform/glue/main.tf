@@ -145,7 +145,7 @@ EOF
 
 resource "aws_glue_job" "merge_files" {
   command {
-    script_location = "s3://${var.initials}-glue-scripts-${var.stage}/merge_files_script.py"
+    script_location = "s3://${var.initials}-glue-scripts-${var.stage}/merge_files.py"
   }
   default_arguments = {
     "--BUCKET" = "${var.initials}-cca-ted-extracted-${var.stage}",
