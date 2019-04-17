@@ -13,6 +13,13 @@ resource "aws_s3_bucket" "glue_scripts" {
     bucket = "${var.initials}-glue-scripts-${var.stage}"
 }
 
+resource "aws_s3_bucket_object" "make_recommendations_script" {
+  bucket = "${var.initials}-glue-scripts-${var.stage}"
+  etag = "${md5(file("../glue/make_recommendations.py"))}"
+  key    = "make_recommendations.py"
+  source = "../glue/make_recommendations.py"
+}
+
 resource "aws_s3_bucket_object" "merge_files_script" {
   bucket = "${var.initials}-glue-scripts-${var.stage}"
   etag = "${md5(file("../glue/merge_files.py"))}"
