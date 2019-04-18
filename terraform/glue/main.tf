@@ -3,6 +3,7 @@ resource "aws_glue_catalog_database" "extracted" {
     name = "cca_ted_extracted_${var.stage}"
 }
 
+# Crawlers
 resource "aws_glue_crawler" "extracted" {
     database_name = "${aws_glue_catalog_database.extracted.name}"
     name = "cca_ted_extracted_${var.stage}"
@@ -10,6 +11,17 @@ resource "aws_glue_crawler" "extracted" {
     s3_target = [
         {
             path = "s3://${var.initials}-cca-ted-extracted-${var.stage}/merged"
+        }
+    ]
+}
+
+resource "aws_glue_crawler" "recommendations" {
+    database_name = "${aws_glue_catalog_database.extracted.name}"
+    name = "cca_ted_recommendations_${var.stage}"
+    role = "${var.iam_role_arn}"
+    s3_target = [
+        {
+            path = "s3://${var.initials}-cca-ted-extracted-${var.stage}/recommendations"
         }
     ]
 }
@@ -35,7 +47,6 @@ EOF
     role = "${var.iam_role_id}"
 }
 
-# IAM
 resource "aws_iam_role_policy" "glue_service" {
     name = "cca_ted_glue_service_${var.stage}"
     policy = <<EOF
@@ -141,6 +152,18 @@ resource "aws_iam_role_policy" "glue_service" {
 }
 EOF
     role = "${var.iam_role_id}"
+}
+
+# Jobs
+resource "aws_glue_job" "make_recommendations" {
+  command {
+    script_location = "s3://${var.initials}-glue-scripts-${var.stage}/make_recommendations.py"
+  }
+  default_arguments = {
+    "--BUCKET" = "${var.initials}-cca-ted-extracted-${var.stage}"
+  }
+  name = "make_recommendations_${var.stage}"
+  role_arn = "${var.iam_role_arn}"
 }
 
 resource "aws_glue_job" "merge_files" {
