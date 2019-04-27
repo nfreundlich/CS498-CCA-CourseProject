@@ -12,6 +12,22 @@ provider:
       Resource:
         - 'arn:aws:s3:::${opt:initials}-cca-ted-raw-${opt:stage}'
     - Action:
+        - 's3:AbortMultipartUpload'
+        - 's3:GetObject'
+        - 's3:ListBucketMultipartUploads'
+        - 's3:ListMultipartUploadParts'
+        - 's3:PutObject'
+      Effect: Allow
+      Resource:
+        - 'arn:aws:s3:::${opt:initials}-cca-ted-fetch-recommendations-${opt:stage}*'
+    - Action:
+        - 's3:GetBucketLocation'
+        - 's3:ListAllMyBuckets'
+        - 's3:ListBucket'
+      Effect: Allow
+      Resource:
+        - '*'
+    - Action:
         - 's3:*Object'
       Effect: Allow
       Resource:
@@ -23,9 +39,34 @@ provider:
       Resource:
         - 'arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_extractions_${opt:stage}'
         - 'arn:aws:sqs:eu-west-1:${opt:aws-account-id}:${opt:initials}_cca_ted_transfers_${opt:stage}'
+    - Action:
+      - 'athena:StartQueryExecution'
+      - 'athena:GetQueryResults'
+      Effect: Allow
+      Resource:
+        - 'arn:aws:athena:eu-west-1:${opt:aws-account-id}:workgroup/primary'
+    - Action:
+        - 'glue:GetDatabase'
+      Effect: Allow
+      Resource:
+        - 'arn:aws:glue:region:${opt:aws-account-id}:database/cca_ted_extraced_${opt:stage}'
+    - Action:
+        - 'glue:GetTable'
+      Effect: Allow
+      Resource:
+        - 'arn:aws:glue:eu-west-1:${opt:aws-account-id}:catalog'
+        - 'arn:aws:glue:eu-west-1:${opt:aws-account-id}:database/cca_ted_extracted_${opt:stage}'
+        - 'arn:aws:glue:eu-west-1:${opt:aws-account-id}:table/cca_ted_extracted_${opt:stage}/recommendations'
   name: aws
   region: eu-west-1
   runtime: python3.7
+  usagePlan:
+    quota:
+      limit: 100
+      period: MONTH
+    throttle:
+      burstLimit: 5
+      rateLimit: 5
 
 functions:
   process_extractions:
@@ -60,6 +101,13 @@ functions:
       - schedule: cron(0 18 ? * TUE-SAT *)
     handler: lambda_download_file.lambda_handler
     timeout: 900
-
+  fetch_recommendations:
+    events:
+      - http:
+          method: get
+          path: recommendations
+    handler: recommendations.fetch
+    timeout: 30
+          
 plugins:
   - serverless-python-requirements
