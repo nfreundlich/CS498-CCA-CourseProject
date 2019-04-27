@@ -1,6 +1,8 @@
 service: cca-serverless
 
 provider:
+  apiKeys:
+    - cca
   environment:
     AWS_ACCOUNT_ID: ${opt:aws-account-id}
     INITIALS: ${opt:initials}
@@ -106,6 +108,7 @@ functions:
       - http:
           method: get
           path: recommendations
+          private: true
     handler: recommendations.fetch
     timeout: 30
           
