@@ -8,6 +8,11 @@ resource "aws_s3_bucket" "extracted" {
     bucket = "${var.initials}-cca-ted-extracted-${var.stage}"
 }
 
+resource "aws_s3_bucket" "fetch_recommendations" {
+    acl = "private"
+    bucket = "${var.initials}-cca-ted-fetch-recommendations-${var.stage}"
+}
+
 resource "aws_s3_bucket" "glue_scripts" {
     acl = "private"
     bucket = "${var.initials}-glue-scripts-${var.stage}"
