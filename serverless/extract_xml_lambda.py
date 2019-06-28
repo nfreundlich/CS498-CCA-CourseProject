@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 s3 = boto3.resource('s3')
-s3_extracted_bucket = f'{os.environ["INITIALS"]}-cca-ted-extracted-{os.environ["STAGE"]}'
+#s3_extracted_bucket = f'{os.environ["INITIALS"]}-cca-ted-extracted-{os.environ["STAGE"]}'
 
 USE_COLS = ['AA_AUTHORITY_TYPE', 'AA_AUTHORITY_TYPE__CODE', 'AC_AWARD_CRIT',
        'AC_AWARD_CRIT__CODE', 'CATEGORY', 'DATE', 'YEAR', 'DS_DATE_DISPATCH',
@@ -161,6 +161,12 @@ def download_file(event):
         
     return downloaded_files
 
+def sum_list(x):
+    try:
+        return sum([float(y) for y in x])
+    except:
+        return 0.0
+        
 def extract_files(files, delete_files=True, data_path="/tmp"):
     extracted_files = []
     
@@ -395,7 +401,7 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
             
         # delete the directory we just read from to avoid conflicts and duplicates
         # this may not be necessary and we may want to revisit it
-        shutil.rmtree(os.path.join(data_dir, dir_))
+        #shutil.rmtree(os.path.join(data_dir, dir_))
         
     if language == None:
         language_tenders = all_tenders
@@ -466,6 +472,8 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
         except:
             pass
     
+    return_df['TOTAL_TENDERS_RECEIVED'] = 0.0
+    
     # add some additional columns containing the first items in some of the list columns
     # if there is an error the column is not a list so just use the value in it
     try:
@@ -473,13 +481,34 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
     except:
         return_df['MAIN_CPV_CODE'] = return_df['ORIGINAL_CPV_CODE']
     try:
-        return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
+        return_df['MAIN_CPV_TEXT'] = return_df['ORIGINAL_CPV_TEXT'].map(lambda x: x[0])
     except:
-        return_df['MAIN_n2016:TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE']
+        return_df['MAIN_CPV_TEXT'] = return_df['ORIGINAL_CPV_TEXT']
     try:
-        return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE'].map(lambda x: x[0])
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT'].map(lambda x: x[0])
     except:
-        return_df['MAIN_n2016:PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE']
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__DATE_CONCLUSION_CONTRACT']
+   
+    try:
+        return_df['TOTAL_TENDERS_RECEIVED'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__TENDERS__NB_TENDERS_RECEIVED'].map(sum_list)
+    except:
+        pass
+    try:
+        return_df['TOTAL_CONTRACT_AWARD_VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'].map(sum_list)
+    except:
+        return_df['TOTAL_CONTRACT_AWARD_VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL']
+    try:
+        return_df['CONTRACT_AWARD_CURR'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL__CURRENCY'].map(lambda x: x[0])
+    except:
+        return_df['CONTRACT_AWARD_CURR'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL__CURRENCY']
+    try:
+        return_df['MAIN_n2016_TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_n2016_TENDERER_NUTS__CODE'] = return_df['n2016:TENDERER_NUTS__CODE']
+    try:
+        return_df['MAIN_n2016_PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_n2016_PERFORMANCE_NUTS__CODE'] = return_df['n2016:PERFORMANCE_NUTS__CODE']
     try:
         return_df['MAIN_MA_MAIN_ACTIVITIES__CODE'] = return_df['MA_MAIN_ACTIVITIES__CODE'].map(lambda x: x[0])
     except:
@@ -492,8 +521,16 @@ def load_data(data_dir, language="EN", doc_type_filter=['Contract award notice',
         return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'].map(lambda x: x[0])
     except:
         return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__CONTRACTORS__CONTRACTOR__ADDRESS_CONTRACTOR__COUNTRY__VALUE']
-    
+    try:    
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'].map(lambda x: x[0])
+    except:
+        return_df['MAIN_AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL'] = return_df['AWARD_CONTRACT__AWARDED_CONTRACT__VALUES__VAL_TOTAL']
+     
     return_df.dropna(axis=1, how="all", inplace=True)
+    
+    # rename columns to remove invalid characters
+    new_cols = [col.replace(":", "_") for col in return_df.columns]
+    return_df.columns = new_cols
     
     return return_df
 

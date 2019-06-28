@@ -1,0 +1,33 @@
+2019/03/24 09:17:32 [INFO] Terraform version: 0.11.13  
+2019/03/24 09:17:32 [INFO] Go runtime version: go1.11.5
+2019/03/24 09:17:32 [INFO] CLI args: []string{"C:\\Users\\eric\\Documents\\Illinois\\Cloud Computing\\terraform_0.11.13_windows_amd64\\terraform.exe", "refresh"}
+2019/03/24 09:17:32 [DEBUG] Attempting to open CLI config file: C:\Users\eric\AppData\Roaming\terraform.rc
+2019/03/24 09:17:32 [DEBUG] File doesn't exist, but doesn't need to. Ignoring.
+2019/03/24 09:17:32 [INFO] CLI command args: []string{"refresh"}
+2019/03/24 09:17:32 [TRACE] module source: "./s3"
+2019/03/24 09:17:32 [DEBUG] plugin: waiting for all plugin processes to complete...
+panic: runtime error: index out of range
+
+goroutine 1 [running]:
+github.com/hashicorp/terraform/config/module.Storage.loadManifest(0xc0004a2180, 0x12, 0x33c4180, 0xc0003affc0, 0x0, 0xc00006faf0, 0xc0002de160, 0x1c0000, 0x0, 0xb, ...)
+	/opt/gopath/src/github.com/hashicorp/terraform/config/module/storage.go:110 +0x487
+github.com/hashicorp/terraform/config/module.Storage.moduleDir(0xc0004a2180, 0x12, 0x33c4180, 0xc0003affc0, 0x0, 0xc00006faf0, 0xc0002de170, 0xd, 0x2, 0x2, ...)
+	/opt/gopath/src/github.com/hashicorp/terraform/config/module/storage.go:185 +0x64
+github.com/hashicorp/terraform/config/module.Storage.findModule(0xc0004a2180, 0x12, 0x33c4180, 0xc0003affc0, 0x0, 0xc00006faf0, 0xc0002de170, 0xd, 0x0, 0x0, ...)
+	/opt/gopath/src/github.com/hashicorp/terraform/config/module/storage.go:258 +0x91
+github.com/hashicorp/terraform/config/module.(*Tree).getChildren(0xc0002e0000, 0xc00008ef90, 0xc0002e0038, 0xb28719, 0x300d660)
+	/opt/gopath/src/github.com/hashicorp/terraform/config/module/tree.go:234 +0x155e
+github.com/hashicorp/terraform/config/module.(*Tree).Load(0xc0002e0000, 0xc00008ef90, 0x0, 0x0)
+	/opt/gopath/src/github.com/hashicorp/terraform/config/module/tree.go:178 +0xa5
+github.com/hashicorp/terraform/command.(*Meta).Module(0xc0003df380, 0xc00035c900, 0x52, 0xc00035c900, 0x52, 0x0, 0x0)
+	/opt/gopath/src/github.com/hashicorp/terraform/command/meta_new.go:57 +0xc2
+github.com/hashicorp/terraform/command.(*RefreshCommand).Run(0xc0003df380, 0x0, 0x0, 0x0, 0xc0002cd770)
+	/opt/gopath/src/github.com/hashicorp/terraform/command/refresh.go:46 +0x3c5
+github.com/mitchellh/cli.(*CLI).Run(0xc0003ca140, 0xc0003ca140, 0xc0001b9d20, 0x1)
+	/opt/gopath/pkg/mod/github.com/mitchellh/cli@v0.0.0-20171129193617-33edc47170b5/cli.go:255 +0x20e
+main.wrappedMain(0x0)
+	/opt/gopath/src/github.com/hashicorp/terraform/main.go:223 +0xb55
+main.realMain(0x0)
+	/opt/gopath/src/github.com/hashicorp/terraform/main.go:100 +0xbe
+main.main()
+	/opt/gopath/src/github.com/hashicorp/terraform/main.go:36 +0x35
